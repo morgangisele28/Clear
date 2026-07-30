@@ -113,7 +113,7 @@ const CSS = `
 .eyebrow{font-family:var(--body);font-size:9.5px;font-weight:600;letter-spacing:0.17em;text-transform:uppercase;}
 
 /* ---------- sky ---------- */
-.sky{position:relative;overflow:hidden;padding:20px 0 44px;
+.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 44px;
   background:linear-gradient(176deg,#0A5F97 0%,var(--sky-1) 32%,#1793CE 64%,var(--sky-2) 86%,var(--sky-3) 95%,var(--canvas) 100%);}
 .sky::before{content:"";position:absolute;top:-170px;right:-130px;width:400px;height:400px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,calc(.20 + var(--clarity,0) * .34)) 0%,
@@ -149,7 +149,7 @@ const CSS = `
   background:linear-gradient(180deg,rgba(239,242,246,.85) 0%,rgba(239,242,246,.45) 55%,rgba(239,242,246,0) 100%);}
 .sky::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");}
-.sky.compact{padding:20px 0 28px;}
+.sky.compact{padding:calc(20px + env(safe-area-inset-top)) 0 28px;}
 .sky-in{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 20px;}
 .sky-title{display:flex;align-items:baseline;justify-content:space-between;color:#fff;gap:12px;}
 .sky-title h1{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em;}
@@ -161,10 +161,13 @@ const CSS = `
   background:rgba(8,54,69,.26);color:#fff;font-family:var(--display);font-size:16px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
-@keyframes slideL{from{opacity:0;transform:translate3d(26px,0,0);}to{opacity:1;transform:none;}}
-@keyframes slideR{from{opacity:0;transform:translate3d(-26px,0,0);}to{opacity:1;transform:none;}}
-.sheet.from-left>*{animation:slideL .34s var(--ease) both;}
-.sheet.from-right>*{animation:slideR .34s var(--ease) both;}
+/* the incoming day slides in from the edge the finger came from, as one page, so a
+   swipe reads as moving between days rather than the contents reshuffling */
+@keyframes slideL{from{opacity:.35;transform:translate3d(46%,0,0);}to{opacity:1;transform:none;}}
+@keyframes slideR{from{opacity:.35;transform:translate3d(-46%,0,0);}to{opacity:1;transform:none;}}
+.sheet.from-left{animation:slideL .3s var(--ease) both;}
+.sheet.from-right{animation:slideR .3s var(--ease) both;}
+.sheet.from-left>*,.sheet.from-right>*{animation:none;}
 .scrim{position:fixed;inset:0;z-index:80;background:rgba(8,54,69,.55);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadein .25s var(--ease) both;}
 .modal{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:720px;margin:0 auto;
@@ -290,6 +293,12 @@ const CSS = `
 /* ---------- sheet ---------- */
 .sheet{background:var(--canvas);border-radius:26px 26px 0 0;margin:-26px auto 0;position:relative;z-index:2;
   max-width:720px;padding:18px 16px 130px;box-shadow:0 -1px 0 rgba(255,255,255,.7) inset, 0 -14px 30px -18px rgba(8,54,69,.45);}
+/* pan-y hands vertical scrolling back to the browser while the horizontal axis stays
+   ours to drag; the controls below need their own axis back */
+.sheet.swipeable{touch-action:pan-y;}
+.sheet.swipeable .scrollx{touch-action:pan-x;}
+.sheet.swipeable input[type=range],.sheet.swipeable textarea,.sheet.swipeable select,
+.sheet.swipeable .week,.sheet.swipeable .ribbon{touch-action:auto;}
 
 /* ---------- sections ---------- */
 .card{background:#fff;border:none;border-radius:22px;padding:18px;margin-top:12px;box-shadow:var(--float);}
@@ -441,12 +450,16 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .btn.pri{background:var(--accent);color:#fff;box-shadow:none;}
 .btn.danger{color:var(--alarm);background:var(--alarm-soft);box-shadow:none;}
 .btn.wide{width:100%;border-radius:15px;background:#fff;box-shadow:var(--float);padding:14px;}
+/* .wide sets a white background after .pri sets a white foreground, so without this
+   the label on a primary wide button is white on white and reads as an empty box */
+.btn.pri.wide{background:var(--accent);color:#fff;}
 .btn.sm{padding:7px 13px;font-size:11.5px;}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;}
 
-.course{display:flex;align-items:center;gap:11px;padding:12px 0;}
+.course{display:flex;align-items:center;gap:11px;padding:12px 0;flex-wrap:wrap;}
+.course .rowacts{margin-left:auto;}
 .course+.course{box-shadow:inset 0 1px 0 var(--hair-2);}
-.course .nm{flex:1;font-size:13.5px;font-weight:500;letter-spacing:-0.01em;}
+.course .nm{flex:1 1 auto;min-width:118px;font-size:13.5px;font-weight:500;letter-spacing:-0.01em;}
 .course .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px;}
 .pill{font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;padding:5px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;}
 .pill.done{background:var(--paper);color:var(--muted);}
@@ -511,6 +524,35 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .remind .ok:disabled{background:var(--paper-2);color:#B6C2CE;}
 .remind .x{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:var(--faint);font-size:15px;padding:0;}
 .nudge{background:#fff;border-radius:22px;padding:18px;margin-top:12px;font-size:13px;color:var(--ink-2);line-height:1.55;box-shadow:var(--float);}
+.nudge.act{display:flex;align-items:center;justify-content:space-between;gap:13px;}
+.nudge.act .btn{flex:0 0 auto;}
+
+/* the month view comes down from the top edge, so it reads as pulling the calendar
+   down over the page rather than as another card in the scroll */
+.calwrap{position:fixed;top:0;left:0;right:0;z-index:81;max-width:720px;margin:0 auto;
+  background:#fff;border-radius:0 0 26px 26px;max-height:88vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding:calc(10px + env(safe-area-inset-top)) 16px 14px;
+  box-shadow:0 22px 50px -20px rgba(8,54,69,.5);animation:dropdown .34s var(--ease) both;}
+@keyframes dropdown{from{transform:translate3d(0,-101%,0);}to{transform:none;}}
+.calgrab{width:40px;height:4px;border-radius:99px;background:var(--hair);margin:0 auto 14px;}
+.calwrap .card{margin-top:0;box-shadow:none;padding:0;}
+.monthbtn .cv{display:inline-block;margin-left:5px;font-size:8px;transition:transform .3s var(--ease);}
+.monthbtn.open .cv{transform:rotate(180deg);}
+
+/* edit and remove controls on rows that were previously write-once */
+.rowacts{display:flex;gap:6px;flex:0 0 auto;}
+.iconsm{width:31px;height:31px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
+  color:var(--ink-2);font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;}
+.iconsm.del{background:var(--alarm-soft);color:var(--alarm);}
+
+/* auto-save is real, but without something confirming it the entry feels unsent */
+/* not .saved — that name is already taken by the floating toast further down */
+.savednote{display:flex;align-items:center;gap:13px;background:#fff;border-radius:22px;
+  padding:16px 18px;margin-top:12px;box-shadow:var(--float);}
+.savednote .tick{width:31px;height:31px;flex:0 0 auto;border-radius:50%;background:var(--ok);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:15px;}
+.savednote .tx{flex:1;font-size:12.5px;color:var(--muted);line-height:1.5;}
+.savednote .tx b{display:block;color:var(--ink);font-weight:600;font-size:13.5px;margin-bottom:2px;}
 .saved{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#083645;color:#fff;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:9px 17px;border-radius:99px;z-index:60;}
 
 .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;padding:0 0 env(safe-area-inset-bottom);
@@ -654,7 +696,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "1.8";
+const BUILD = "1.9";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -2610,8 +2652,9 @@ function ResponseProfile({ resp }) {
   );
 }
 
-function PrnRow({ day, meds, onSet, onAdd }) {
+function PrnRow({ day, meds, onSet, onAdd, onDelete }) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const prn = day.prn || {};
   const commit = () => {
@@ -2628,20 +2671,30 @@ function PrnRow({ day, meds, onSet, onAdd }) {
           return (
             <button
               key={m}
-              className={"chip" + (n > 0 ? " on" : "")}
-              onClick={() => onSet(m, (n + 1) % 5)}
+              className={"chip" + (!editing && n > 0 ? " on" : "")}
+              onClick={() => (editing ? onDelete(m) : onSet(m, (n + 1) % 5))}
             >
               {m}
-              {n > 0 ? "  \u00d7" + n : ""}
+              {editing ? "  \u00d7" : n > 0 ? "  \u00d7" + n : ""}
             </button>
           );
         })}
-        {!adding && (
+        {!adding && !editing && (
           <button className="chip add" onClick={() => setAdding(true)}>
             + New
           </button>
         )}
+        {onDelete && meds.length > 0 && !adding && (
+          <button className="chip add" onClick={() => setEditing((v) => !v)}>
+            {editing ? "Done" : "Edit list"}
+          </button>
+        )}
       </div>
+      {editing && (
+        <div className="note" style={{ marginTop: 10 }}>
+          Tap one to drop it from the list. Days you already recorded it on keep their record.
+        </div>
+      )}
       {adding && (
         <div className="chipwrap">
           <input
@@ -2722,8 +2775,9 @@ function TagPicker({ selected, all, onToggle, onCreate, onDelete }) {
   );
 }
 
-function SymptomList({ day, custom, onSet, onAddCustom }) {
+function SymptomList({ day, custom, onSet, onAddCustom, onDeleteCustom }) {
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const rows = [...SYMPTOMS.map((x) => x[0]), ...custom.map((n) => "c:" + n)];
   const reviewed = day.symptomsReviewed !== false;
@@ -2732,9 +2786,21 @@ function SymptomList({ day, custom, onSet, onAddCustom }) {
     <>
       {rows.map((k) => {
         const cur = day.symptoms[k] ?? 0;
+        // only the ones you added yourself can go; the six standard features are what
+        // the exacerbation count is defined on
+        const mine = k.indexOf("c:") === 0;
         return (
           <div className="sym" key={k}>
             <span className="nm">{symLabel(k)}</span>
+            {editing && mine ? (
+              <button
+                className="iconsm del"
+                aria-label={"Remove " + symLabel(k)}
+                onClick={() => onDeleteCustom(k.slice(2))}
+              >
+                {"×"}
+              </button>
+            ) : null}
             <div className="dots">
               {[0, 1, 2, 3].map((lv) => (
                 <button
@@ -2751,9 +2817,16 @@ function SymptomList({ day, custom, onSet, onAddCustom }) {
         );
       })}
       {!adding ? (
-        <button className="chip add" style={{ marginTop: 12 }} onClick={() => setAdding(true)}>
-          + Add a symptom
-        </button>
+        <div className="chips" style={{ marginTop: 12 }}>
+          <button className="chip add" onClick={() => setAdding(true)}>
+            + Add a symptom
+          </button>
+          {onDeleteCustom && custom.length > 0 && (
+            <button className="chip add" onClick={() => setEditing((v) => !v)}>
+              {editing ? "Done" : "Edit list"}
+            </button>
+          )}
+        </div>
       ) : (
         <div className="chipwrap">
           <input
@@ -3097,13 +3170,14 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, addTag, addCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, addCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
   const sputumRecorded = day.sputum.color != null;
 
   const [showCourse, setShowCourse] = useState(false);
+  const [editCourseId, setEditCourseId] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [showTags, setShowTags] = useState(false);
@@ -3248,6 +3322,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             meds={state.prnMeds || []}
             onSet={(m, n) => up({ prn: { ...(day.prn || {}), [m]: n } })}
             onAdd={addPrnMed}
+            onDelete={deletePrnMed}
           />
         </>
       )}
@@ -3320,6 +3395,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         custom={state.customSymptoms || []}
         onSet={upSym}
         onAddCustom={addCustomSymptom}
+        onDeleteCustom={deleteCustomSymptom}
       />
       {exac.met && (
         <div className="banner">
@@ -3404,6 +3480,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             date={date}
             customDrugs={state.customDrugs || []}
             onRemember={addCustomDrug}
+            onForgetDrug={deleteCustomDrug}
+            onCancel={() => setShowCourse(false)}
             onAdd={(c) => {
               addCourse(c);
               setShowCourse(false);
@@ -3413,20 +3491,61 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         {activeCourses.length === 0 && finishedCourses.length === 0 && !showCourse && (
           <div className="note">Nothing active on this date.</div>
         )}
-        {activeCourses.map((c) => (
-          <div className="course" key={c.id}>
-            <div className="nm">
-              {c.drug}
-              <small>{c.dose || "dose not recorded"}</small>
+        {activeCourses.map((c) =>
+          editCourseId === c.id ? (
+            <CourseForm
+              key={c.id}
+              date={date}
+              course={c}
+              customDrugs={state.customDrugs || []}
+              onForgetDrug={deleteCustomDrug}
+              onRemember={addCustomDrug}
+              onCancel={() => setEditCourseId(null)}
+              onAdd={(next) => {
+                editCourse(c.id, {
+                  drug: next.drug,
+                  dose: next.dose,
+                  startDate: next.startDate,
+                  days: next.days,
+                });
+                setEditCourseId(null);
+              }}
+            />
+          ) : (
+            <div className="course" key={c.id}>
+              <div className="nm">
+                {c.drug}
+                <small>{c.dose || "dose not recorded"}</small>
+              </div>
+              <span className="pill">
+                {c.days ? `day ${diffDays(c.startDate, date) + 1} of ${c.days}` : `day ${diffDays(c.startDate, date) + 1}`}
+              </span>
+              <div className="rowacts">
+                <button className="btn sm" onClick={() => endCourse(c.id, date)}>
+                  End
+                </button>
+                <button
+                  className="iconsm"
+                  aria-label={"Edit " + c.drug}
+                  onClick={() => setEditCourseId(c.id)}
+                >
+                  {"✎"}
+                </button>
+                <button
+                  className="iconsm del"
+                  aria-label={"Delete " + c.drug}
+                  onClick={() => {
+                    if (window.confirm("Delete " + c.drug + " from your record? Ending a course keeps it in your history; deleting removes it.")) {
+                      deleteCourse(c.id);
+                    }
+                  }}
+                >
+                  {"×"}
+                </button>
+              </div>
             </div>
-            <span className="pill">
-              {c.days ? `day ${diffDays(c.startDate, date) + 1} of ${c.days}` : `day ${diffDays(c.startDate, date) + 1}`}
-            </span>
-            <button className="btn sm" onClick={() => endCourse(c.id, date)}>
-              End
-            </button>
-          </div>
-        ))}
+          )
+        )}
         {finishedCourses.map((c) => (
           <div key={c.id} style={{ paddingTop: 14 }}>
             <div className="course" style={{ paddingBottom: 4 }}>
@@ -3435,6 +3554,26 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 <small>finished {fmtShortYr(addDays(c.startDate, c.days - 1))}</small>
               </div>
               <span className="pill done">review</span>
+              <div className="rowacts">
+                <button
+                  className="iconsm"
+                  aria-label={"Edit " + c.drug}
+                  onClick={() => setEditCourseId(c.id)}
+                >
+                  {"✎"}
+                </button>
+                <button
+                  className="iconsm del"
+                  aria-label={"Delete " + c.drug}
+                  onClick={() => {
+                    if (window.confirm("Delete " + c.drug + " from your record? This removes it from your history for good.")) {
+                      deleteCourse(c.id);
+                    }
+                  }}
+                >
+                  {"×"}
+                </button>
+              </div>
             </div>
             <ResponseProfile resp={courseResponse(c, state.days)} />
             <div className="note" style={{ margin: "13px 0 7px" }}>
@@ -3657,6 +3796,19 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         </>
       )}
 
+      {/* Entries write themselves as they are typed. Without something saying so at the
+          end of the page it reads as an unsubmitted form, and people back out worrying
+          they have lost the lot. */}
+      <div className="savednote no-print">
+        <div className="tick">{"✓"}</div>
+        <div className="tx">
+          <b>{logged ? "Saved on this device" : "Nothing logged yet"}</b>
+          {logged
+            ? "This entry is already stored. There is no submit step — close the app whenever you like and it will be here."
+            : "Anything you enter saves itself as you go. There is no submit step."}
+        </div>
+      </div>
+
       <Ribbon days={state.days} span={90} onPick={(d) => setDate(d)} />
 
       {logged && (
@@ -3668,13 +3820,18 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   );
 }
 
-function CourseForm({ date, onAdd, customDrugs, onRemember }) {
+// Doubles as the editor for a course already recorded. Passing `course` fills the
+// fields from it and turns the button into a save, so a name typed wrong is a
+// correction rather than something to delete and re-enter.
+function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course, onCancel }) {
   const LIST = [...DRUGS.filter((d) => d.name !== "Other"), ...customDrugs, { name: "Other", dose: "", days: 7 }];
-  const [drugIdx, setDrugIdx] = useState(0);
-  const [custom, setCustom] = useState("");
-  const [dose, setDose] = useState(DRUGS[0].dose);
-  const [days, setDays] = useState(DRUGS[0].days);
-  const [start, setStart] = useState(date);
+  const known = course ? LIST.findIndex((d) => d.name === course.drug) : -1;
+  const [drugIdx, setDrugIdx] = useState(course ? (known >= 0 ? known : LIST.length - 1) : 0);
+  const [custom, setCustom] = useState(course && known < 0 ? course.drug : "");
+  const [dose, setDose] = useState(course ? course.dose || "" : DRUGS[0].dose);
+  const [days, setDays] = useState(course ? (course.days == null ? "" : course.days) : DRUGS[0].days);
+  const [start, setStart] = useState(course ? course.startDate : date);
+  const [tidy, setTidy] = useState(false);
 
   const pick = (i) => {
     setDrugIdx(i);
@@ -3724,25 +3881,67 @@ function CourseForm({ date, onAdd, customDrugs, onRemember }) {
           />
         </div>
       </div>
-      <button
-        className="btn pri wide"
-        style={{ marginTop: 10 }}
-        onClick={() => {
-          const name = isOther ? custom.trim() || "Unnamed medication" : LIST[drugIdx].name;
-          if (isOther && custom.trim()) {
-            onRemember({ name: custom.trim(), dose, days: days === "" ? 7 : Number(days) });
-          }
-          onAdd({
-            id: "c" + Date.now(),
-            drug: name,
-            dose,
-            startDate: start,
-            days: days === "" ? null : Number(days),
-          });
-        }}
-      >
-        Add course
-      </button>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        {onCancel && (
+          <button className="btn" style={{ flex: "0 0 auto" }} onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+        <button
+          className="btn pri wide"
+          style={{ flex: 1, width: "auto" }}
+          onClick={() => {
+            const name = isOther ? custom.trim() || "Unnamed medication" : LIST[drugIdx].name;
+            if (isOther && custom.trim()) {
+              onRemember({ name: custom.trim(), dose, days: days === "" ? 7 : Number(days) });
+            }
+            onAdd({
+              id: course ? course.id : "c" + Date.now(),
+              drug: name,
+              dose,
+              startDate: start,
+              days: days === "" ? null : Number(days),
+            });
+          }}
+        >
+          {course ? "Save changes" : "Add course"}
+        </button>
+      </div>
+
+      {customDrugs.length > 0 && onForgetDrug && (
+        <>
+          <button
+            className="chip add"
+            style={{ marginTop: 12 }}
+            onClick={() => setTidy((v) => !v)}
+          >
+            {tidy ? "Done" : "Edit saved medications"}
+          </button>
+          {tidy && (
+            <>
+              <div className="chips" style={{ marginTop: 10 }}>
+                {customDrugs.map((d) => (
+                  <button
+                    key={d.name}
+                    className="chip"
+                    onClick={() => {
+                      onForgetDrug(d.name);
+                      if (LIST[drugIdx] && LIST[drugIdx].name === d.name) pick(0);
+                    }}
+                  >
+                    {d.name}
+                    {"  ×"}
+                  </button>
+                ))}
+              </div>
+              <div className="note" style={{ marginTop: 10 }}>
+                Tap one to drop it from this list. Courses already recorded with that name
+                are untouched.
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -4766,6 +4965,7 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [slide, setSlide] = useState("");
   const touch = useRef(null);
+  const sheetRef = useRef(null);
   const [date, setDate] = useState(todayISO());
   // an installed app resumes from background rather than reloading, so the calendar
   // day has to be watched rather than read once at startup
@@ -4819,6 +5019,13 @@ function App() {
 
   const deleteCourse = useCallback((id) => {
     setState((s) => ({ ...s, courses: s.courses.filter((c) => c.id !== id) }));
+  }, []);
+
+  const editCourse = useCallback((id, patch) => {
+    setState((s) => ({
+      ...s,
+      courses: s.courses.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
   }, []);
 
   useEffect(() => {
@@ -4887,40 +5094,81 @@ function App() {
     setTimeout(() => setFlash(""), 1800);
   };
 
-  // full-screen horizontal swipe to change day, without fighting the sliders or
-  // the tables that scroll sideways
+  // Full-screen horizontal swipe to change day. The page tracks the finger and, if the
+  // swipe commits, carries on off the edge while the next day comes in behind it, so
+  // days read as sitting next to each other. Sliders and sideways-scrolling tables
+  // keep their own gestures. The transform is written straight to the node rather than
+  // held in state: this fires on every touchmove and a re-render of the whole day at
+  // that rate drops frames.
+  const SWIPE_OUT_MS = 165;
+
+  const paint = (dx) => {
+    const el = sheetRef.current;
+    if (!el) return;
+    el.style.transition = "";
+    el.style.transform = "translate3d(" + dx + "px,0,0)";
+    el.style.opacity = String(Math.max(0.5, 1 - Math.abs(dx) / 560));
+  };
+
+  const settle = (dx, ms, gone) => {
+    const el = sheetRef.current;
+    if (!el) return;
+    el.style.transition = "transform " + ms + "ms var(--ease), opacity " + ms + "ms var(--ease)";
+    el.style.transform = "translate3d(" + dx + "px,0,0)";
+    el.style.opacity = gone ? "0" : "1";
+  };
+
   const onTouchStart = (e) => {
-    if (tab !== "today" || showMonth || showAbout) {
-      touch.current = null;
-      return;
-    }
+    touch.current = null;
+    if (tab !== "today" || showMonth || showAbout) return;
     const t = e.touches && e.touches[0];
     if (!t) return;
     const el = e.target;
     const blocked =
       el && el.closest && el.closest('input[type="range"], .scrollx, textarea, select, .week, .ribbon');
-    touch.current = blocked ? null : { x: t.clientX, y: t.clientY, at: Date.now() };
+    if (blocked) return;
+    touch.current = { x: t.clientX, y: t.clientY, at: Date.now(), axis: null, dx: 0 };
   };
 
-  const onTouchEnd = (e) => {
+  const onTouchMove = (e) => {
     const st = touch.current;
-    touch.current = null;
     if (!st) return;
-    const t = e.changedTouches && e.changedTouches[0];
+    const t = e.touches && e.touches[0];
     if (!t) return;
     const dx = t.clientX - st.x;
     const dy = t.clientY - st.y;
-    if (Date.now() - st.at > 700) return;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
-    if (e.cancelable) e.preventDefault(); // stop the tap that would otherwise follow
-    if (dx < 0) {
-      if (date >= today) return;
-      setSlide("from-left");
-      setDate(addDays(date, 1));
-    } else {
-      setSlide("from-right");
-      setDate(addDays(date, -1));
+    if (st.axis === null) {
+      if (Math.abs(dx) < 9 && Math.abs(dy) < 9) return;
+      // once the gesture is vertical it belongs to the scroller, and taking it back
+      // mid-scroll is worse than never having claimed it
+      st.axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? "x" : "y";
+      if (st.axis === "y") {
+        touch.current = null;
+        return;
+      }
     }
+    // there is no tomorrow to swipe to, so dragging that way resists instead of moving
+    st.dx = dx < 0 && date >= today ? dx * 0.24 : dx;
+    paint(st.dx);
+  };
+
+  const onTouchEnd = () => {
+    const st = touch.current;
+    touch.current = null;
+    if (!st || st.axis !== "x") return;
+    const w = (sheetRef.current && sheetRef.current.offsetWidth) || 360;
+    const far = Math.abs(st.dx) > Math.min(96, w * 0.24);
+    const flick = Date.now() - st.at < 320 && Math.abs(st.dx) > 42;
+    const forward = st.dx < 0;
+    if ((!far && !flick) || (forward && date >= today)) {
+      settle(0, 220, false);
+      return;
+    }
+    settle(forward ? -w : w, SWIPE_OUT_MS, true);
+    window.setTimeout(() => {
+      setSlide(forward ? "from-left" : "from-right");
+      setDate(addDays(date, forward ? 1 : -1));
+    }, SWIPE_OUT_MS);
   };
 
   const wipe = () => {
@@ -5052,6 +5300,17 @@ function App() {
     );
   }, []);
 
+  // A name typed once is remembered for the dropdown, so a typo would otherwise
+  // follow you around for good. These only forget the suggestion; courses and days
+  // already recorded against the name keep it.
+  const deletePrnMed = useCallback((n) => {
+    setState((s) => ({ ...s, prnMeds: (s.prnMeds || []).filter((x) => x !== n) }));
+  }, []);
+
+  const deleteCustomDrug = useCallback((name) => {
+    setState((s) => ({ ...s, customDrugs: (s.customDrugs || []).filter((d) => d.name !== name) }));
+  }, []);
+
   const setCourseNote = useCallback((id, outcomeNote) => {
     setState((s) => ({
       ...s,
@@ -5070,6 +5329,10 @@ function App() {
     setState((s) =>
       (s.customSymptoms || []).includes(n) ? s : { ...s, customSymptoms: [...(s.customSymptoms || []), n] }
     );
+  }, []);
+
+  const deleteCustomSymptom = useCallback((n) => {
+    setState((s) => ({ ...s, customSymptoms: (s.customSymptoms || []).filter((x) => x !== n) }));
   }, []);
 
   const quickWell = useCallback((d) => {
@@ -5145,9 +5408,26 @@ function App() {
             <h1>{TITLES[tab][0]}</h1>
             <div className="skyacts">
               {tab === "today" ? (
-                <button className="monthbtn" onClick={() => setShowMonth((v) => !v)}>
-                  {showMonth ? "Close" : "Month"}
-                </button>
+                <>
+                  {date !== today && (
+                    <button
+                      className="monthbtn"
+                      onClick={() => {
+                        setSlide(date < today ? "from-left" : "from-right");
+                        setDate(today);
+                      }}
+                    >
+                      Today
+                    </button>
+                  )}
+                  <button
+                    className={"monthbtn" + (showMonth ? " open" : "")}
+                    aria-expanded={showMonth}
+                    onClick={() => setShowMonth((v) => !v)}
+                  >
+                    Month<span className="cv">{"▾"}</span>
+                  </button>
+                </>
               ) : (
                 <span className="sub">{TITLES[tab][1]}</span>
               )}
@@ -5194,24 +5474,36 @@ function App() {
         </div>
       </div>
 
+      {tab === "today" && showMonth && (
+        <>
+          <div className="scrim no-print" onClick={() => setShowMonth(false)} />
+          <div className="calwrap no-print">
+            <div className="calgrab" />
+            <MonthPanel
+              days={state.days}
+              date={date}
+              setDate={(d) => {
+                setDate(d);
+                setShowMonth(false);
+              }}
+              onClose={() => setShowMonth(false)}
+              regimen={state.regimen}
+            />
+          </div>
+        </>
+      )}
+
       <div
-        className={"sheet " + slide}
+        className={"sheet " + slide + (tab === "today" ? " swipeable" : "")}
         key={tab + date + slide}
+        ref={sheetRef}
         onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
       >
         {tab === "today" && dueMilestone && (
           <Milestone value={dueMilestone} run={run} onDismiss={() => ackMilestone(dueMilestone)} />
-        )}
-
-        {tab === "today" && showMonth && (
-          <MonthPanel
-            days={state.days}
-            date={date}
-            setDate={setDate}
-            onClose={() => setShowMonth(false)}
-            regimen={state.regimen}
-          />
         )}
 
         {!persist && (
@@ -5223,8 +5515,17 @@ function App() {
         )}
 
         {date !== todayISO() && tab === "today" && (
-          <div className="nudge no-print">
-            Editing {fmtLong(date)}. Tap today in the week strip to come back.
+          <div className="nudge act no-print">
+            <span>Editing {fmtLong(date)}.</span>
+            <button
+              className="btn sm pri"
+              onClick={() => {
+                setSlide("from-left");
+                setDate(todayISO());
+              }}
+            >
+              Back to today
+            </button>
           </div>
         )}
 
@@ -5251,6 +5552,10 @@ function App() {
             addCourse={addCourse}
             endCourse={endCourse}
             deleteCourse={deleteCourse}
+            editCourse={editCourse}
+            deleteCustomSymptom={deleteCustomSymptom}
+            deletePrnMed={deletePrnMed}
+            deleteCustomDrug={deleteCustomDrug}
             addTag={addTag}
             addCustomSymptom={addCustomSymptom}
             setStatus={setStatus}
