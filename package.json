@@ -5,7 +5,8 @@
   "type": "module",
   "description": "A private log for bronchiectasis. All data stays on the user's device.",
   "scripts": {
-    "build": "node build/build.mjs"
+    "build": "node build/build.mjs",
+    "screenshots": "node build/screenshots.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
