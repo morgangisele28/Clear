@@ -8,6 +8,10 @@ So I built this. It is the log I wanted and could not find.
 
 No account. No server. Nothing is sent anywhere. Add it to your home screen and it behaves like an app, offline.
 
+## → [Open Clear](https://morgangisele28.github.io/Clear/)
+
+Open that on your phone and add it to your home screen. Nothing to sign up for, nothing to install from a store. Instructions below.
+
 ---
 
 ![Remember what happened last time](screenshots/clear-store-01-what.jpg)
@@ -50,9 +54,13 @@ Also in there: peak flow with weekly prompts, SpO2, temperature and resting hear
 
 ## Install it
 
-1. Open the link in **Safari** on iPhone, or **Chrome** on Android.
-2. iPhone: Share, then **Add to Home Screen**. Android: menu, then **Install app**.
-3. Open it from the icon.
+**On your phone, open [https://morgangisele28.github.io/Clear/](https://morgangisele28.github.io/Clear/)**
+
+1. iPhone: use **Safari** (not Chrome). Tap the Share button, scroll down, tap **Add to Home Screen**, then **Add**.
+2. Android: use **Chrome**. Tap the three-dot menu, then **Install app** or **Add to Home screen**.
+3. Close the browser and open Clear from the new icon on your home screen.
+
+That last step matters. Opened from the icon it runs fullscreen with no browser bars, and your data is treated as more permanent than it would be in a browser tab.
 
 Installing matters for more than convenience. Browsers clear data for sites you have not visited in a while, and putting it on your home screen protects against that.
 
