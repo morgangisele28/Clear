@@ -781,7 +781,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.0";
+const BUILD = "2.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1342,10 +1342,16 @@ function sampleYear() {
   eps.forEach((e, k) => {
     if (!e.drug) return;
     const spec = DRUGS.find((x) => x.name === e.drug);
+    // the sample is built straight into state rather than loaded through migrate, so
+    // it has to carry the structured dose fields itself or it demonstrates a version
+    // of the app that no longer exists
+    const parsed = parseDose(spec ? spec.dose : "");
     st.courses.push({
       id: "s" + k,
       drug: e.drug,
       dose: spec ? spec.dose : "",
+      ...parsed,
+      note: "",
       startDate: addDays(start, e.at + 1),
       days: spec ? spec.days : 7,
       outcome: k === 1 ? "resolved" : "partial",

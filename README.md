@@ -22,33 +22,39 @@ Open that on your phone and add it to your home screen. Nothing to sign up for, 
 
 ![Your care plan, not someone else's](screenshots/clear-store-02-care.jpg)
 
+**Antibiotic courses, dose by dose.** Record a course with its dose and how often you take it, then tick each dose off the way you do your daily care. That count is kept separate from your airway care, so neither number quietly changes what the other one means. When a course finishes it tells you how many of the expected doses you actually logged, which matters when you are trying to work out whether something helped or whether you just missed half of it.
+
+![Tick off every dose](screenshots/clear-store-03-doses.jpg)
+
 **Sputum on scales that hold up over years.** Colour on an eight-step chart from clear to rust, volume in seven steps with a physical measure under each, and thickness from watery to rubbery. Fixed scales, deliberately, so a reading in July is genuinely comparable to one next February. It also tells you when your colour has shifted against your own recent baseline, which is the earliest reliable warning you get.
 
-![Match it on a scale that holds](screenshots/clear-store-03-sputum.jpg)
+![Match it on a scale that holds](screenshots/clear-store-04-sputum.jpg)
 
 **It counts exacerbation features for you.** The standard definition is three or more of: increased cough, increased sputum volume, increased purulence, breathlessness, fatigue, haemoptysis. You are already recording all six, so the app counts them and names which ones are present. It is a count of what you logged, not a diagnosis.
 
-![It knows what an exacerbation is](screenshots/clear-store-04-exacerbation.jpg)
+![It knows what an exacerbation is](screenshots/clear-store-05-exacerbation.jpg)
 
 **Episodes form on their own.** Mark a day unwell and an episode opens; it closes after a clear week. From that you get duration, the gap since your last one, peak sputum colour, cultures grown, which antibiotics overlapped, and whether they worked. If you realise it started before you noticed, set the real onset date and it backfills.
 
-![Every illness, on the record](screenshots/clear-store-05-episodes.jpg)
+![Every illness, on the record](screenshots/clear-store-06-episodes.jpg)
 
 **It writes the episode up for your team.** A paragraph you can paste straight into a message: what it opened with, how the sputum moved, the lowest peak flow as a percentage of your own best, what you took and what it did. The treatment response is read out of your day-by-day entries, so you get things like *cough gone by day four, fatigue never shifted*.
 
 This is generated from your log by arithmetic, not by a language model. It is a document that changes what you get prescribed, so nothing in it can be invented.
 
-![A write-up for your team](screenshots/clear-store-06-handover.jpg)
+![A write-up for your team](screenshots/clear-store-07-handover.jpg)
 
 **The numbers that actually matter.** Episodes this year against last year. Days between episodes. Peak flow read against your own personal best in green, amber and red zones rather than against population averages, which are a poor guide with structural lung disease. Airway care adherence compared against what followed it, labelled as association rather than cause.
 
-![Longer gaps. Fewer episodes.](screenshots/clear-store-07-patterns.jpg)
+![Longer gaps. Fewer episodes.](screenshots/clear-store-08-patterns.jpg)
 
 **And it stays yours.** Everything lives in your browser's storage on your device.
 
-![It never leaves your phone](screenshots/clear-store-08-private.jpg)
+![It never leaves your phone](screenshots/clear-store-09-private.jpg)
 
-Also in there: peak flow with weekly prompts, SpO2, temperature and resting heart rate with plain-language context, medication courses with derived outcomes, a rescue pack list with expiry warnings, custom tags, an appointment list that prints with your report, optional air quality for your location, a printable clinic report, and CSV export.
+Also in there: peak flow with weekly prompts, SpO2, temperature and resting heart rate with plain-language context, a rescue pack list with expiry warnings, custom tags, an appointment list that prints with your report, optional air quality for your location, a printable clinic report, and CSV export.
+
+Swipe sideways to move between days, and the date stays with you as you scroll. Anything you typed wrong can be corrected: courses can be edited or deleted, and any medication, symptom or tag you added yourself can be renamed out of the list without touching the days you already recorded it on.
 
 ---
 
