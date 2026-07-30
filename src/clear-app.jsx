@@ -463,6 +463,8 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .course .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px;}
 .pill{font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;padding:5px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;}
 .pill.done{background:var(--paper);color:var(--muted);}
+.pill.ok{background:#E1F1E9;color:var(--ok);}
+.dosenote{margin:2px 0 10px;padding-left:2px;}
 
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .stat{background:var(--paper);border-radius:14px;padding:15px 9px;text-align:center;}
@@ -524,6 +526,24 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .remind .ok:disabled{background:var(--paper-2);color:#B6C2CE;}
 .remind .x{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:var(--faint);font-size:15px;padding:0;}
 .nudge{background:#fff;border-radius:22px;padding:18px;margin-top:12px;font-size:13px;color:var(--ink-2);line-height:1.55;box-shadow:var(--float);}
+/* the day, carried down the page once the week strip has scrolled away, so the
+   sideways gesture still has something on screen that belongs to it */
+.daybar{position:fixed;top:0;left:0;right:0;z-index:44;display:flex;align-items:center;gap:8px;
+  max-width:720px;margin:0 auto;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;
+  background:rgba(244,247,250,.86);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+  backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 1px 0 var(--hair-2),0 10px 24px -18px rgba(8,54,69,.5);
+  animation:daydrop .26s var(--ease) both;}
+@keyframes daydrop{from{transform:translate3d(0,-100%,0);opacity:0;}to{transform:none;opacity:1;}}
+.daybar .wnav{color:var(--ink-2);height:34px;}
+.daybar .wnav:disabled{opacity:.22;}
+.dayname{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;
+  background:none;padding:6px 4px;color:var(--ink);font-family:var(--display);font-size:14px;
+  font-weight:600;letter-spacing:-0.01em;}
+.dayname .cv{font-size:8px;color:var(--muted);}
+.todaychip{border:none;background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:600;
+  letter-spacing:0.15em;text-transform:uppercase;padding:7px 11px;border-radius:99px;flex:0 0 auto;}
+@media print{.daybar{display:none;}}
+
 .nudge.act{display:flex;align-items:center;justify-content:space-between;gap:13px;}
 .nudge.act .btn{flex:0 0 auto;}
 
@@ -673,6 +693,71 @@ const DRUGS = [
   { name: "Other", dose: "", days: 7 },
 ];
 
+// A dose is a number and a unit, and a frequency is one of a handful of things, so
+// both are pickers rather than a text box. Anything genuinely unusual — a loading
+// dose, alternate days — goes in the note, where it stays readable instead of
+// making the dose field unparseable.
+const DOSE_UNITS = ["mg", "mcg", "g", "ml", "puffs", "tablets", "capsules", "units"];
+const FREQS = [
+  { v: 1, label: "Once a day" },
+  { v: 2, label: "Twice a day" },
+  { v: 3, label: "Three times a day" },
+  { v: 4, label: "Four times a day" },
+  { v: 0, label: "Something else" },
+];
+const FREQ_WORD = { 1: "once daily", 2: "twice daily", 3: "three times daily", 4: "four times daily" };
+
+// The stored `dose` string stays the one thing every reader uses — the handover
+// paragraph, the CSV, the course rows — so structuring the fields does not change a
+// single existing record's wording.
+function doseText(c) {
+  if (!c) return "";
+  const amt = String(c.amount == null ? "" : c.amount).trim();
+  const parts = [];
+  if (amt) parts.push(amt + (c.unit ? " " + c.unit : ""));
+  if (c.freq && FREQ_WORD[c.freq]) parts.push(FREQ_WORD[c.freq]);
+  else if (String(c.freqText || "").trim()) parts.push(String(c.freqText).trim());
+  return parts.join(" ").trim();
+}
+
+// Reads an old free-text dose well enough to fill the pickers when one is opened for
+// editing. Whatever it cannot place stays in the "something else" box rather than
+// being dropped, and the original `dose` string is never overwritten by this.
+function parseDose(text) {
+  const out = { amount: "", unit: "", freq: 0, freqText: "" };
+  const s = String(text || "").trim();
+  if (!s) return out;
+  const m = s.match(/^\s*([\d][\d.,/]*)\s*(mcg|mg|g|ml|units?|puffs?|tablets?|capsules?)\b/i);
+  if (m) {
+    out.amount = m[1];
+    out.unit = m[2].toLowerCase();
+  }
+  const rest = m ? s.slice(m[0].length).trim() : s;
+  if (/\b(twice|two times|2\s*x|bd|bid)\b/i.test(s)) out.freq = 2;
+  else if (/\b(three times|3\s*x|tds|tid)\b/i.test(s)) out.freq = 3;
+  else if (/\b(four times|4\s*x|qds|qid)\b/i.test(s)) out.freq = 4;
+  else if (/\b(once|one time|1\s*x|daily|od)\b/i.test(s)) out.freq = 1;
+  if (!out.freq) out.freqText = rest;
+  return out;
+}
+
+// Doses ticked off against doses expected, over the part of the course that has
+// actually happened. Null when the course has no daily frequency to count against.
+function courseAdherence(course, days) {
+  const per = course && course.freq;
+  if (!per || !course.days) return null;
+  const end = addDays(course.startDate, course.days - 1);
+  const stop = end < todayISO() ? end : todayISO();
+  let taken = 0;
+  let expected = 0;
+  for (let d = course.startDate; d <= stop; d = addDays(d, 1)) {
+    expected += per;
+    const cd = (days[d] && days[d].courseDoses) || {};
+    taken += Math.min(cd[course.id] || 0, per);
+  }
+  return expected > 0 ? { taken, expected } : null;
+}
+
 const SEED_TAGS = ["Preschool bug", "Household illness", "Travel or flight", "Poor sleep", "Air quality", "Saw the doctor", "Missed airway care"];
 const SEED_PRN = ["Guaifenesin (Mucinex)"];
 const ORGANISMS = ["", "No growth", "Pseudomonas aeruginosa", "Haemophilus influenzae", "Streptococcus pneumoniae", "Staphylococcus aureus", "Moraxella catarrhalis", "Non-tuberculous mycobacteria", "Aspergillus", "Mixed flora", "Result pending", "Other"];
@@ -696,7 +781,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "1.9";
+const BUILD = "2.0";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -745,6 +830,7 @@ const emptyDay = () => ({
   restHr: "",
   tags: [],
   prn: {},
+  courseDoses: {},
   aqi: null,
   sampleSent: false,
   organism: "",
@@ -775,6 +861,7 @@ function migrate(raw) {
     s.days[k].symptoms = s.days[k].symptoms || {};
     s.days[k].tags = s.days[k].tags || [];
     s.days[k].prn = s.days[k].prn || {};
+    s.days[k].courseDoses = s.days[k].courseDoses || {};
     // care items moved from yes/no flags to session counts
     ["saline", "aerobika"].forEach((c) => {
       const val = s.days[k].care[c];
@@ -816,6 +903,16 @@ function migrate(raw) {
       if (sp.texture != null) sp.texture = Math.min(SCALE_MAX, sp.texture * 2);
     });
   }
+  // Courses gained structured dose, frequency and note fields. Old ones are read
+  // into those fields so the editor opens filled in, but `dose` itself is left
+  // exactly as written: it is what the handover paragraph and the CSV print, and
+  // rewording someone's record behind their back is not a migration.
+  s.courses = s.courses.map((c) => {
+    if (c.amount != null) return c;
+    const p = parseDose(c.dose);
+    return { ...c, amount: p.amount, unit: p.unit, freq: p.freq, freqText: p.freqText, note: c.note || "" };
+  });
+
   s.v = 5;
   return s;
 }
@@ -3170,7 +3267,7 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
@@ -3505,6 +3602,11 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 editCourse(c.id, {
                   drug: next.drug,
                   dose: next.dose,
+                  amount: next.amount,
+                  unit: next.unit,
+                  freq: next.freq,
+                  freqText: next.freqText,
+                  note: next.note,
                   startDate: next.startDate,
                   days: next.days,
                 });
@@ -3516,7 +3618,17 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
               <div className="nm">
                 {c.drug}
                 <small>{c.dose || "dose not recorded"}</small>
+                {c.note ? <small>{c.note}</small> : null}
               </div>
+              {c.freq > 0 && (
+                <span
+                  className={
+                    "pill" + (((day.courseDoses || {})[c.id] || 0) >= c.freq ? " ok" : "")
+                  }
+                >
+                  {Math.min((day.courseDoses || {})[c.id] || 0, c.freq)} of {c.freq} today
+                </span>
+              )}
               <span className="pill">
                 {c.days ? `day ${diffDays(c.startDate, date) + 1} of ${c.days}` : `day ${diffDays(c.startDate, date) + 1}`}
               </span>
@@ -3576,6 +3688,18 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
               </div>
             </div>
             <ResponseProfile resp={courseResponse(c, state.days)} />
+            {(() => {
+              const a = courseAdherence(c, state.days);
+              if (!a) return null;
+              return (
+                <div className="note" style={{ marginTop: 10 }}>
+                  You ticked off {a.taken} of {a.expected} doses
+                  {a.taken < a.expected
+                    ? ". Worth mentioning if it did not work as expected."
+                    : ". A full course."}
+                </div>
+              );
+            })()}
             <div className="note" style={{ margin: "13px 0 7px" }}>
               That is what the log shows. How did it feel?
             </div>
@@ -3591,6 +3715,35 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         ))}
       </div>
     </>
+  );
+
+  // Ticking doses off a course, in the same shape as airway care, but deliberately a
+  // separate card and a separate count: the care ring means "my daily plan", and
+  // folding a two-week antibiotic into it would change what that number has meant
+  // across every day already recorded.
+  const doseTakers = activeCourses.filter((c) => c.freq > 0);
+  const courseDoseSection = doseTakers.length > 0 && (
+    <div className="card">
+      <div className="card-t">
+        <span>Medication doses today</span>
+      </div>
+      {doseTakers.map((c) => (
+        <div key={c.id}>
+          <DosePill
+            label={c.drug}
+            target={c.freq}
+            count={(day.courseDoses || {})[c.id] || 0}
+            onSet={(n) => setCourseDose(date, c.id, n)}
+            allowExtra={false}
+          />
+          {c.note ? <div className="note dosenote">{c.note}</div> : null}
+        </div>
+      ))}
+      <div className="note" style={{ marginTop: 12 }}>
+        Counted separately from your airway care, so neither total changes what the
+        other one means.
+      </div>
+    </div>
   );
 
   const hasTags = (day.tags || []).length > 0;
@@ -3771,6 +3924,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       {isUnwell ? (
         <>
           {careSection}
+          {courseDoseSection}
           {sputumSection}
           {symptomSection}
           {detailSection}
@@ -3782,6 +3936,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       ) : (
         <>
           {careSection}
+          {courseDoseSection}
           {sputumSection}
           {airSection}
           {tagSection}
@@ -3828,17 +3983,27 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
   const known = course ? LIST.findIndex((d) => d.name === course.drug) : -1;
   const [drugIdx, setDrugIdx] = useState(course ? (known >= 0 ? known : LIST.length - 1) : 0);
   const [custom, setCustom] = useState(course && known < 0 ? course.drug : "");
-  const [dose, setDose] = useState(course ? course.dose || "" : DRUGS[0].dose);
+  const seed = course && course.amount != null ? course : parseDose(course ? course.dose : DRUGS[0].dose);
+  const [amount, setAmount] = useState(seed.amount || "");
+  const [unit, setUnit] = useState(seed.unit || "mg");
+  const [freq, setFreq] = useState(seed.freq || 0);
+  const [freqText, setFreqText] = useState(seed.freqText || "");
+  const [note, setNote] = useState((course && course.note) || "");
   const [days, setDays] = useState(course ? (course.days == null ? "" : course.days) : DRUGS[0].days);
   const [start, setStart] = useState(course ? course.startDate : date);
   const [tidy, setTidy] = useState(false);
 
   const pick = (i) => {
     setDrugIdx(i);
-    setDose(LIST[i].dose);
+    const p = parseDose(LIST[i].dose);
+    setAmount(p.amount);
+    setUnit(p.unit || "mg");
+    setFreq(p.freq);
+    setFreqText(p.freqText);
     setDays(LIST[i].days);
   };
   const isOther = LIST[drugIdx].name === "Other";
+  const preview = doseText({ amount, unit, freq, freqText });
 
   return (
     <div className="card flat" style={{ marginTop: 0, marginBottom: 12 }}>
@@ -3858,13 +4023,53 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
           onChange={(e) => setCustom(e.target.value)}
         />
       )}
+      <div className="rowlab">Dose</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          className="inp"
+          style={{ flex: 1 }}
+          type="number"
+          inputMode="decimal"
+          step="any"
+          placeholder="500"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <select className="inp" style={{ width: 128 }} value={unit} onChange={(e) => setUnit(e.target.value)}>
+          {DOSE_UNITS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="rowlab">How often</div>
+      <select className="inp" value={freq} onChange={(e) => setFreq(Number(e.target.value))}>
+        {FREQS.map((f) => (
+          <option key={f.v} value={f.v}>
+            {f.label}
+          </option>
+        ))}
+      </select>
+      {freq === 0 && (
+        <input
+          className="inp"
+          style={{ marginTop: 8 }}
+          placeholder="every 6 to 8 hours, alternate days"
+          value={freqText}
+          onChange={(e) => setFreqText(e.target.value)}
+        />
+      )}
+
+      <div className="rowlab">Anything special about how you take it</div>
       <input
         className="inp"
-        style={{ marginTop: 8 }}
-        placeholder="Dose and frequency"
-        value={dose}
-        onChange={(e) => setDose(e.target.value)}
+        placeholder="2 tablets on day 1, then 1 a day. With food."
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
       />
+
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <div style={{ flex: 1 }}>
           <div className="rowlab" style={{ marginTop: 0 }}>Start</div>
@@ -3892,6 +4097,10 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
           style={{ flex: 1, width: "auto" }}
           onClick={() => {
             const name = isOther ? custom.trim() || "Unnamed medication" : LIST[drugIdx].name;
+            const fields = { amount: String(amount).trim(), unit, freq, freqText: freqText.trim() };
+            // `dose` stays the single string every reader prints, rebuilt from the
+            // pickers so the record reads the same way it always has
+            const dose = doseText(fields);
             if (isOther && custom.trim()) {
               onRemember({ name: custom.trim(), dose, days: days === "" ? 7 : Number(days) });
             }
@@ -3899,6 +4108,8 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
               id: course ? course.id : "c" + Date.now(),
               drug: name,
               dose,
+              ...fields,
+              note: note.trim(),
               startDate: start,
               days: days === "" ? null : Number(days),
             });
@@ -4966,6 +5177,7 @@ function App() {
   const [slide, setSlide] = useState("");
   const touch = useRef(null);
   const sheetRef = useRef(null);
+  const [stuck, setStuck] = useState(false);
   const [date, setDate] = useState(todayISO());
   // an installed app resumes from background rather than reloading, so the calendar
   // day has to be watched rather than read once at startup
@@ -5026,6 +5238,19 @@ function App() {
       ...s,
       courses: s.courses.map((c) => (c.id === id ? { ...c, ...patch } : c)),
     }));
+  }, []);
+
+  // Kept in its own key rather than in day.care, because doseCount and careComplete
+  // walk the regimen: a course dose landing in there would quietly rewrite airway-care
+  // adherence for every day of the course, and with it the trend charts.
+  const setCourseDose = useCallback((d, id, n) => {
+    setState((s) => {
+      const prev = { ...emptyDay(), ...(s.days[d] || {}) };
+      return {
+        ...s,
+        days: { ...s.days, [d]: { ...prev, courseDoses: { ...(prev.courseDoses || {}), [id]: n } } },
+      };
+    });
   }, []);
 
   useEffect(() => {
@@ -5101,6 +5326,29 @@ function App() {
   // held in state: this fires on every touchmove and a re-render of the whole day at
   // that rate drops frames.
   const SWIPE_OUT_MS = 165;
+
+  const goDay = (delta) => {
+    if (delta > 0 && date >= today) return;
+    setSlide(delta > 0 ? "from-left" : "from-right");
+    setDate(addDays(date, delta));
+  };
+
+  // The week strip lives in the header, so once you scroll into the entry there is
+  // nothing left saying which day you are on — which made swiping sideways feel like
+  // it belonged to a different page. This brings the day and its arrows down with you.
+  useEffect(() => {
+    if (tab !== "today" || !ready) {
+      setStuck(false);
+      return;
+    }
+    const el = document.querySelector(".weekrow");
+    if (!el || typeof window.IntersectionObserver !== "function") return;
+    const io = new window.IntersectionObserver(([e]) => setStuck(!e.isIntersecting), {
+      threshold: 0,
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [tab, ready]);
 
   const paint = (dx) => {
     const el = sheetRef.current;
@@ -5474,6 +5722,37 @@ function App() {
         </div>
       </div>
 
+      {tab === "today" && stuck && !showMonth && !showAbout && (
+        <div className="daybar no-print">
+          <button className="wnav" aria-label="Previous day" onClick={() => goDay(-1)}>
+            {"‹"}
+          </button>
+          <button className="dayname" onClick={() => setShowMonth(true)}>
+            <b>
+              {parseISO(date).toLocaleDateString(undefined, {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
+            </b>
+            <span className="cv">{"▾"}</span>
+          </button>
+          {date !== today && (
+            <button className="todaychip" onClick={() => goDay(diffDays(date, today))}>
+              Today
+            </button>
+          )}
+          <button
+            className="wnav"
+            aria-label="Next day"
+            disabled={date >= today}
+            onClick={() => goDay(1)}
+          >
+            {"›"}
+          </button>
+        </div>
+      )}
+
       {tab === "today" && showMonth && (
         <>
           <div className="scrim no-print" onClick={() => setShowMonth(false)} />
@@ -5553,6 +5832,7 @@ function App() {
             endCourse={endCourse}
             deleteCourse={deleteCourse}
             editCourse={editCourse}
+            setCourseDose={setCourseDose}
             deleteCustomSymptom={deleteCustomSymptom}
             deletePrnMed={deletePrnMed}
             deleteCustomDrug={deleteCustomDrug}
