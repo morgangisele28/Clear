@@ -52,7 +52,9 @@ This is generated from your log by arithmetic, not by a language model. It is a 
 
 ![It never leaves your phone](screenshots/clear-store-09-private.jpg)
 
-Also in there: peak flow with weekly prompts, SpO2, temperature and resting heart rate with plain-language context, a rescue pack list with expiry warnings, custom tags, an appointment list that prints with your report, optional air quality for your location, a printable clinic report, and CSV export.
+Also in there: peak flow with weekly prompts, FEV1 from a home spirometer, SpO2, temperature, resting heart rate and weight with plain-language context, the MRC breathlessness grade, a rescue pack list with expiry warnings, custom tags, an appointment list that prints with your report, optional air quality for your location, a printable clinic report, and CSV export.
+
+You choose which of those you track. Turn off anything you have no way to measure and its field disappears and stops prompting, without touching anything you have already recorded. Courses record whether they were tablets at home, IV at home, or an admission, because those are not the same event.
 
 Swipe sideways to move between days, and the date stays with you as you scroll. Anything you typed wrong can be corrected: courses can be edited or deleted, and any medication, symptom or tag you added yourself can be renamed out of the list without touching the days you already recorded it on.
 
