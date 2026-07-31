@@ -931,7 +931,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.3";
+const BUILD = "3.3.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -6010,6 +6010,9 @@ function App() {
         const wants = new URLSearchParams(window.location.search).has("sample");
         if (wants && (!s || !Object.keys(s.days || {}).length)) {
           setState(sampleYear());
+          // a made-up year of entries with a red "never backed up" dot over it is
+          // not what the sample is showing off, so give it a backup too
+          markBackedUp();
           // the save effect skips the first change so that merely loading does not
           // rewrite the file; this is a real change and should be written
           first.current = false;
