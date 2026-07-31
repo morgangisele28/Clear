@@ -787,6 +787,15 @@ const SAMPLE_REGIMEN = [
 const activePlan = (regimen) =>
   (regimen || []).filter((r) => r.active && r.target > 0).map((r) => ({ id: r.id, name: r.name, target: r.target }));
 
+// An IV course at home and a hospital admission are not the same event as a week of
+// tablets, and the report should not read as though they were.
+const SETTINGS = [
+  { v: "home", label: "At home" },
+  { v: "ivhome", label: "IV at home" },
+  { v: "hospital", label: "In hospital" },
+];
+const SETTING_WORD = { ivhome: "IV at home", hospital: "in hospital" };
+
 const DRUGS = [
   { name: "Azithromycin (Z-Pak)", dose: "500 mg d1, 250 mg d2–5", days: 5 },
   { name: "Ciprofloxacin", dose: "500 mg twice daily", days: 14 },
@@ -869,18 +878,33 @@ function courseAdherence(course, days) {
 // Turning one off hides its field and stops it prompting, and never touches anything
 // already recorded.
 const TRACKABLE = [
-  { key: "peakFlow", label: "Peak flow", note: "Needs a peak flow meter" },
-  { key: "spo2", label: "Oxygen saturation", note: "Needs a pulse oximeter" },
-  { key: "temp", label: "Temperature", note: "Needs a thermometer" },
-  { key: "restHr", label: "Resting heart rate", note: "From a watch, or counted" },
-  { key: "aqi", label: "Air quality", note: "Looked up for where you are" },
-  { key: "culture", label: "Sputum cultures", note: "Samples you send off" },
+  { key: "peakFlow", label: "Peak flow", note: "Needs a peak flow meter", on: true },
+  { key: "fev1", label: "FEV1", note: "From a home spirometer, in litres" },
+  { key: "spo2", label: "Oxygen saturation", note: "Needs a pulse oximeter", on: true },
+  { key: "temp", label: "Temperature", note: "Needs a thermometer", on: true },
+  { key: "restHr", label: "Resting heart rate", note: "From a watch, or counted", on: true },
+  { key: "weight", label: "Weight", note: "Watched closely in cystic fibrosis" },
+  { key: "mmrc", label: "Breathlessness grade", note: "The MRC 0 to 4 scale, now and then" },
+  { key: "aqi", label: "Air quality", note: "Looked up for where you are", on: true },
+  { key: "culture", label: "Sputum cultures", note: "Samples you send off", on: true },
 ];
+// The three added later default off, so a log that already exists gains no new boxes
+// without being asked. Setup offers all of them.
 const defaultTracking = () => {
   const t = {};
-  TRACKABLE.forEach((x) => (t[x.key] = true));
+  TRACKABLE.forEach((x) => (t[x.key] = !!x.on));
   return t;
 };
+
+// mMRC. Kept apart from the daily breathlessness symptom on purpose: that one asks how
+// today is, this one asks what you can usually manage, which moves over months.
+const MMRC = [
+  { v: "0", label: "0" },
+  { v: "1", label: "1" },
+  { v: "2", label: "2" },
+  { v: "3", label: "3" },
+  { v: "4", label: "4" },
+];
 
 const SEED_TAGS = ["Household illness", "Travel or flight", "Poor sleep", "Air quality", "Saw the doctor", "Missed airway care"];
 const SEED_PRN = [];
@@ -907,7 +931,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.1";
+const BUILD = "3.2";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -954,6 +978,9 @@ const emptyDay = () => ({
   spo2: "",
   peakFlow: "",
   restHr: "",
+  fev1: "",
+  weight: "",
+  mmrc: "",
   tags: [],
   prn: {},
   courseDoses: {},
@@ -964,7 +991,7 @@ const emptyDay = () => ({
   notes: "",
 });
 
-const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), remindTimes: [], conditions: [], meta: {} });
+const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), remindTimes: [], conditions: [], weightUnit: "kg", meta: {} });
 
 function migrate(raw) {
   const fromVersion = (raw && raw.v) || 1;
@@ -983,6 +1010,7 @@ function migrate(raw) {
   s.remindTimes = s.remindTimes || [];
   // a log that predates this was scored on the bronchiectasis rule, so it keeps it
   s.conditions = s.conditions || ["bronchiectasis"];
+  s.weightUnit = s.weightUnit || "kg";
   s.questions = s.questions || [...SEED_QUESTIONS];
   Object.keys(s.days).forEach((k) => {
     s.days[k] = { ...emptyDay(), ...s.days[k] };
@@ -1697,7 +1725,9 @@ function episodeSummary(ep, days, regimen) {
   const T = [];
   ep.meds.forEach((m) => {
     const r = courseResponse(m, days);
-    let line = `I took ${m.drug}${m.dose ? ", " + m.dose : ""}, starting ${fmt(m.startDate)}${
+    let line = `I took ${m.drug}${m.dose ? ", " + m.dose : ""}${
+      SETTING_WORD[m.setting] ? " (" + SETTING_WORD[m.setting] + ")" : ""
+    }, starting ${fmt(m.startDate)}${
       m.days ? ` for ${m.days} days` : ""
     }.`;
     if (r && r.symptoms.length) {
@@ -1977,7 +2007,7 @@ function Info({ title, children, label }) {
 // First run, and reachable afterwards from an empty care card. Builds the plan by
 // tapping suggestions rather than starting from a blank form, but nothing is chosen
 // until it is chosen: the suggestions are categories, not a regimen.
-function Setup({ regimen, track, conditions, onChange, onTrack, onConditions, onClose }) {
+function Setup({ regimen, track, conditions, unit, onChange, onTrack, onConditions, onUnit, onClose }) {
   const [step, setStep] = useState(1);
   const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(regimen || [])));
   const [own, setOwn] = useState("");
@@ -2112,7 +2142,7 @@ function Setup({ regimen, track, conditions, onChange, onTrack, onConditions, on
             for, and will not appear on your daily page.
           </p>
         </div>
-        <TrackSettings track={track || {}} onChange={onTrack} bare />
+        <TrackSettings track={track || {}} onChange={onTrack} unit={unit} onUnit={onUnit} bare />
         <button className="btn pri wide" style={{ marginTop: 18 }} onClick={onClose}>
           Start logging
         </button>
@@ -2215,8 +2245,8 @@ function ConditionPicker({ conditions, onChange, bare }) {
   );
 }
 
-function TrackSettings({ track, onChange, bare }) {
-  const on = (k) => track[k] !== false;
+function TrackSettings({ track, onChange, bare, unit, onUnit }) {
+  const on = (k) => track[k] === true;
   const Wrap = bare ? "div" : "div";
   return (
     <Wrap className={bare ? "" : "card"}>
@@ -2230,8 +2260,8 @@ function TrackSettings({ track, onChange, bare }) {
         Nothing you have already recorded is removed.
       </div>
       {TRACKABLE.map((t) => (
+        <React.Fragment key={t.key}>
         <button
-          key={t.key}
           className={"trackrow" + (on(t.key) ? " on" : "")}
           aria-pressed={on(t.key)}
           onClick={() => onChange({ ...track, [t.key]: !on(t.key) })}
@@ -2244,6 +2274,20 @@ function TrackSettings({ track, onChange, bare }) {
             <i />
           </span>
         </button>
+        {t.key === "weight" && on("weight") && onUnit && (
+          <div className="chips" style={{ margin: "2px 0 10px" }}>
+            {["kg", "lb"].map((u) => (
+              <button
+                key={u}
+                className={"chip" + ((unit || "kg") === u ? " on" : "")}
+                onClick={() => onUnit(u)}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        )}
+        </React.Fragment>
       ))}
     </Wrap>
   );
@@ -3877,7 +3921,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   const careDone = doseCount(day, state.regimen);
   const tracks = (k) => (state.track || {})[k] !== false;
-  const anyVital = ["peakFlow", "spo2", "temp", "restHr"].some(tracks);
+  const anyVital = ["peakFlow", "fev1", "spo2", "temp", "restHr", "weight", "mmrc"].some(tracks);
   // what is left of the plan today, by name, for the prompt at the foot of the page
   const careLeft = todayPlan
     .map((r) => ({ name: r.name, left: Math.max(0, r.target - (day.care[r.id] || 0)) }))
@@ -4236,7 +4280,41 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 onChange={(e) => up({ restHr: e.target.value })} />
             </div>
           )}
+          {tracks("fev1") && (
+            <div className="vit">
+              <label>FEV1 L</label>
+              <input type="number" inputMode="decimal" step="0.01" placeholder="—" value={day.fev1}
+                onChange={(e) => up({ fev1: e.target.value })} />
+            </div>
+          )}
+          {tracks("weight") && (
+            <div className="vit">
+              <label>Weight {state.weightUnit === "lb" ? "lb" : "kg"}</label>
+              <input type="number" inputMode="decimal" step="0.1" placeholder="—" value={day.weight}
+                onChange={(e) => up({ weight: e.target.value })} />
+            </div>
+          )}
         </div>
+        {tracks("mmrc") && (
+          <>
+            <div className="rowlab">
+              Breathlessness grade
+              <Info title="Breathlessness grade">
+                <p>The MRC scale. It asks what you can usually manage, not how today feels.</p>
+                <p><strong>0</strong> — only breathless with hard exercise.</p>
+                <p><strong>1</strong> — short of breath hurrying, or up a slight hill.</p>
+                <p><strong>2</strong> — slower than others your age on the flat, or stopping for breath.</p>
+                <p><strong>3</strong> — stopping after a hundred metres or a few minutes on the flat.</p>
+                <p><strong>4</strong> — too breathless to leave the house, or breathless dressing.</p>
+                <p>
+                  It moves over months rather than days, so there is no need to set it often. The
+                  daily breathlessness in your symptoms is the one that asks about today.
+                </p>
+              </Info>
+            </div>
+            <Seg options={MMRC} value={day.mmrc || null} onChange={(v) => up({ mmrc: v })} small />
+          </>
+        )}
         <OtherInsights day={day} days={state.days} date={date} />
         {tracks("peakFlow") && date !== todayISO() && day.peakFlow !== "" && (
           <PeakFlowInsight days={state.days} date={date} value={day.peakFlow} />
@@ -4286,6 +4364,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                   freq: next.freq,
                   freqText: next.freqText,
                   note: next.note,
+                  setting: next.setting,
                   startDate: next.startDate,
                   days: next.days,
                 });
@@ -4296,7 +4375,10 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             <div className="course" key={c.id}>
               <div className="nm">
                 {c.drug}
-                <small>{c.dose || "dose not recorded"}</small>
+                <small>
+                  {c.dose || "dose not recorded"}
+                  {SETTING_WORD[c.setting] ? " · " + SETTING_WORD[c.setting] : ""}
+                </small>
                 {c.note ? <small>{c.note}</small> : null}
               </div>
               {c.freq > 0 && (
@@ -4642,6 +4724,7 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
   const [freq, setFreq] = useState(seed.freq || 0);
   const [freqText, setFreqText] = useState(seed.freqText || "");
   const [note, setNote] = useState((course && course.note) || "");
+  const [setting, setSetting] = useState((course && course.setting) || "home");
   const [days, setDays] = useState(course ? (course.days == null ? "" : course.days) : DRUGS[0].days);
   const [start, setStart] = useState(course ? course.startDate : date);
   const [tidy, setTidy] = useState(false);
@@ -4715,6 +4798,9 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
         />
       )}
 
+      <div className="rowlab">Where</div>
+      <Seg options={SETTINGS} value={setting} onChange={(v) => setSetting(v || "home")} small />
+
       <div className="rowlab">Anything special about how you take it</div>
       <input
         className="inp"
@@ -4763,6 +4849,7 @@ function CourseForm({ date, onAdd, customDrugs, onRemember, onForgetDrug, course
               dose,
               ...fields,
               note: note.trim(),
+              setting,
               startDate: start,
               days: days === "" ? null : Number(days),
             });
@@ -5455,7 +5542,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind, onConditions }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind, onConditions, onUnit }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5811,7 +5898,12 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
             download(name, ics, "text/calendar");
           }}
         />
-        <TrackSettings track={state.track || {}} onChange={onTrack} />
+        <TrackSettings
+          track={state.track || {}}
+          onChange={onTrack}
+          unit={state.weightUnit}
+          onUnit={onUnit}
+        />
       </div>
 
       <div className="sectionhead no-print">Keeping it safe</div>
@@ -6290,6 +6382,10 @@ function App() {
     setState((s) => ({ ...s, conditions: c }));
   }, []);
 
+  const setUnit = useCallback((u) => {
+    setState((s) => ({ ...s, weightUnit: u }));
+  }, []);
+
   const addPrnMed = useCallback((n) => {
     setState((s) =>
       (s.prnMeds || []).includes(n) ? s : { ...s, prnMeds: [...(s.prnMeds || []), n] }
@@ -6648,6 +6744,7 @@ function App() {
             onTrack={setTrack}
             onRemind={setRemind}
             onConditions={setConditions}
+            onUnit={setUnit}
             onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
           />
         )}
@@ -6658,7 +6755,9 @@ function App() {
           regimen={state.regimen || []}
           track={state.track || {}}
           conditions={state.conditions || []}
+          unit={state.weightUnit}
           onConditions={setConditions}
+          onUnit={setUnit}
           onChange={(r) => {
             setRegimen(r);
             // saving the plan makes needsPlan false, which would unmount the sheet
