@@ -157,6 +157,15 @@ const CSS = `
 
 /* ---------- week ---------- */
 .skyacts{display:flex;align-items:center;gap:8px;}
+/* how long since the last backup, at a glance. Bright on purpose: the header is a
+   blue gradient, and the ink greens and reds used elsewhere disappear against it. */
+.bdot{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
+  background:rgba(8,54,69,.26);display:flex;align-items:center;justify-content:center;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+.bdot .bd{width:9px;height:9px;border-radius:50%;display:block;background:#fff;}
+.bdot.ok .bd{background:#6BDCA0;box-shadow:0 0 8px 1px rgba(107,220,160,.85);}
+.bdot.warn .bd{background:#FFC24D;box-shadow:0 0 8px 1px rgba(255,194,77,.85);}
+.bdot.bad .bd{background:#FF7A7A;box-shadow:0 0 8px 1px rgba(255,122,122,.85);}
 .iconbtn{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;
   background:rgba(8,54,69,.26);color:#fff;font-family:var(--display);font-size:16px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;
@@ -781,7 +790,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.1";
+const BUILD = "2.2";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1646,6 +1655,19 @@ function markBackedUp() {
   try {
     localStorage.setItem(BACKUP_KEY, todayISO());
   } catch (e) {}
+}
+
+// Green for three days, amber to a week, red past that or if there has never been
+// one. The label carries the same information as the colour, because a coloured dot
+// on its own is not a signal you can read out or see reliably.
+function backupStatus() {
+  const at = lastBackupAt();
+  if (!at) return { tone: "bad", label: "No backup taken yet" };
+  const days = diffDays(at, todayISO());
+  const said = days <= 0 ? "Backed up today" : `Backed up ${days} day${days === 1 ? "" : "s"} ago`;
+  if (days <= 3) return { tone: "ok", label: said };
+  if (days <= 7) return { tone: "warn", label: said };
+  return { tone: "bad", label: said };
 }
 
 function storageWorks() {
@@ -5128,7 +5150,7 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
       ))}
 
       <div className="card no-print">
-        <div className="card-t"><span>Backup</span></div>
+        <div className="card-t" id="backup"><span>Backup</span></div>
         <StorageHealth days={Object.keys(state.days).length} />
         <div className="btnrow">
           <button className="btn pri" onClick={shareJson}>Back up now</button>
@@ -5632,6 +5654,10 @@ function App() {
     );
   }
 
+  // read on every render rather than held in state: markBackedUp writes straight to
+  // localStorage, and the render that follows it should already show the new colour
+  const backup = backupStatus();
+
   const TITLES = {
     today: ["Clear", "bronchiectasis"],
     history: ["History", "everything on record"],
@@ -5685,6 +5711,20 @@ function App() {
               ) : (
                 <span className="sub">{TITLES[tab][1]}</span>
               )}
+              <button
+                className={"bdot " + backup.tone}
+                aria-label={backup.label + ". Open backup."}
+                title={backup.label}
+                onClick={() => {
+                  setTab("report");
+                  setTimeout(() => {
+                    const el = document.getElementById("backup");
+                    if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+                  }, 80);
+                }}
+              >
+                <span className="bd" />
+              </button>
               <button
                 className="iconbtn"
                 aria-label="About this app"
