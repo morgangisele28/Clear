@@ -49,6 +49,13 @@ const PANELS = [
     imgs: ["care.png"],
   },
   {
+    file: "clear-store-02b-conditions",
+    eyebrow: "Bronchiectasis · CF · COPD",
+    head: "Built for what\nyou actually have",
+    sub: "Each condition counts an exacerbation differently, so pick yours and it scores that rule. Pick more than one — they often come together — and you get each count separately, never blended into something wrong for both.",
+    imgs: ["conditions.png"],
+  },
+  {
     file: "clear-store-03-doses",
     eyebrow: "While you are on a course",
     head: "Antibiotics,\nrecorded properly",
@@ -89,6 +96,15 @@ const PANELS = [
     head: "Longer gaps.\nFewer episodes.",
     sub: "Days between episodes, this year against last, peak flow read against your own personal best rather than population averages.",
     imgs: ["gaps.png", "yoy.png"],
+  },
+  {
+    file: "clear-store-08b-yours",
+    eyebrow: "It fits round you",
+    head: "Only the things\nyou actually measure",
+    sub: "No peak flow meter? Switch it off and the field goes, along with the reminder to use it. Set the times you mean to do your care and put them in your own calendar, so something nudges you on the days you feel fine.",
+    // reminders first: it is the short card, so it lands whole and the long
+    // list of measurements bleeds off the bottom edge behind it
+    imgs: ["remind.png", "track.png"],
   },
   {
     file: "clear-store-09-private",
@@ -232,11 +248,21 @@ await page.evaluate((iso) => {
 await page.waitForTimeout(1200);
 await clearOverlays();
 
-// half-fill today's antibiotic so the dose pill reads mid-course rather than empty
-const pill = page.locator(".card").filter({ hasText: "Medication doses today" }).locator(".dosepill").first();
-if (await pill.count()) {
-  await pill.click();
-  await page.waitForTimeout(800);
+// Half-fill today's antibiotic so it reads mid-course rather than untouched. The
+// pill wraps back to zero once it is full, so click round until it lands on one.
+for (let i = 0; i < 4; i++) {
+  const done = await page.evaluate(() => {
+    const c = [...document.querySelectorAll(".card")].find((x) => /Today's care/.test(x.textContent));
+    if (!c) return true;
+    const rows = [...c.querySelectorAll(".dosepill")];
+    const p = rows[rows.length - 1];
+    if (!p) return true;
+    if (/^1 of /.test(p.querySelector(".val")?.textContent || "")) return true;
+    p.click();
+    return false;
+  });
+  if (done) break;
+  await page.waitForTimeout(700);
 }
 
 // A fixed nav and day bar float over everything, and an element screenshot renders
@@ -244,7 +270,7 @@ if (await pill.count()) {
 // animations too: the sky breathes on a 19 second loop, so without this the same
 // panel comes out slightly different on every run.
 await page.addStyleTag({
-  content: ".nav,.daybar{display:none!important;}" +
+  content: ".nav,.daybar,.saved{display:none!important;}" +
     "*,*::before,*::after{animation:none!important;transition:none!important;}",
 });
 await page.waitForTimeout(300);
@@ -278,6 +304,27 @@ await card("Episodes a year", "yoy");
 
 await click("^Report$");
 await page.waitForTimeout(1100);
+// pick two, because they do come together and an all-off card advertises nothing
+// one click per evaluate, with a wait between: the row's handler closes over the
+// condition list as it was at render time, so two clicks in a row on the same
+// paint make the second one overwrite the first instead of adding to it
+for (const label of ["Bronchiectasis", "Cystic fibrosis"]) {
+  await page.evaluate((want) => {
+    const c = [...document.querySelectorAll(".card")].find((x) => /What you live with/.test(x.textContent));
+    if (!c) return;
+    const b = [...c.querySelectorAll("button.trackrow")].find((x) => x.textContent.trim().startsWith(want));
+    if (b && b.getAttribute("aria-pressed") !== "true") b.click();
+  }, label);
+  await page.waitForTimeout(600);
+}
+await card("What you live with", "conditions");
+// give the reminders card something to show before photographing it
+await click("Add a time");
+await page.waitForTimeout(500);
+await click("Another time");
+await page.waitForTimeout(700);
+await card("Daily reminders", "remind");
+await card("What you track", "track");
 // fill the appointment so the closing panel is not advertising an empty form
 await page.evaluate(() => {
   const set = (el, v) => {
