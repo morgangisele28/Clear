@@ -458,23 +458,17 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .trackrow.on .tr-sw{background:var(--accent);}
 .trackrow.on .tr-sw i{transform:translateX(18px);}
 .doserow{display:flex;align-items:center;gap:7px;margin-top:9px;}
-.dosepill{position:relative;flex:1;min-width:0;height:50px;border-radius:15px;background:var(--paper);
+.dosepill{position:relative;flex:1;min-width:0;height:50px;border:none;border-radius:15px;background:var(--paper);
   padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;color:var(--ink);}
-/* the segments are the buttons; the label and the count are painted underneath
-   them and must not swallow the tap that was aimed at a segment */
-.dosepill .lbl,.dosepill .val,.dosefill{pointer-events:none;}
-.segs{position:absolute;inset:0;display:flex;}
-.seg{flex:1;border:none;background:transparent;padding:0;border-right:1px solid rgba(8,54,69,.13);
-  -webkit-tap-highlight-color:transparent;}
-.seg:last-child{border-right:none;}
-.seg:active{background:rgba(8,54,69,.06);}
-/* only rendered on a finished treatment, so it never competes with the bar for
-   what the tap means while there are still doses to fill */
+/* dividers only — the whole bar is one target, so a tap never has to be aimed */
+.dosepill .ticks{position:absolute;inset:0;display:flex;pointer-events:none;}
+.dosepill .ticks i{flex:1;border-right:1px solid rgba(8,54,69,.13);}
+.dosepill .ticks i:last-child{border-right:none;}
+/* the way back. Its slot is held even when hidden, so the bar keeps its width
+   while you tap along it rather than shifting under your thumb at the first dose */
 .xbtn{width:40px;height:50px;flex:0 0 auto;border:none;border-radius:14px;background:var(--paper);
-  color:var(--faint);font-family:var(--display);font-size:14px;font-weight:600;
+  color:var(--muted);font-family:var(--display);font-size:17px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;}
-.xbtn.on{background:var(--sky-3);color:var(--sky-1);}
-.xbtn:disabled{opacity:.35;}
 .dosefill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);
   transition:width .5s var(--ease),background .4s var(--ease);}
 .dosepill.full .dosefill{background:var(--lime);}
@@ -483,8 +477,9 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .dosepill .val{position:relative;font-family:var(--display);font-size:12px;font-weight:600;color:var(--muted);
   white-space:nowrap;letter-spacing:0.01em;}
 .dosepill.full .val{color:#083645;}
-/* extras read as a deliberate overshoot rather than as a fuller kind of done */
-.dosepill.over .dosefill{background:var(--sky-3);}
+/* a day with an extra session in it is still a finished day, so the bar stays
+   green and the "+1" in the label does the talking. Recolouring it read as a
+   different state altogether. */
 .careweek{display:flex;align-items:center;gap:4px;}
 .cw{width:9px;height:9px;border-radius:3px;background:var(--paper-2);}
 .cw.part{background:#A8CEDE;}
@@ -975,7 +970,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.6";
+const BUILD = "3.6.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -2988,12 +2983,28 @@ function Appointment({ appt, questions, onAppt, onQuestions }) {
     <div className="card">
       <div className="card-t">
         <span>Next appointment</span>
-        {appt.date && <span className="hint">{diffDays(todayISO(), appt.date)} days away</span>}
+        {appt.date && (
+          <span className="hint">
+            {(() => {
+              const n = diffDays(todayISO(), appt.date);
+              return n < 0 ? "past" : n === 0 ? "today" : n === 1 ? "tomorrow" : `${n} days away`;
+            })()}
+          </span>
+        )}
       </div>
       <div className="locrow" style={{ marginTop: 0 }}>
         <input className="inp" type="date" value={appt.date || ""} onChange={(e) => onAppt({ ...appt, date: e.target.value })} />
         <input className="inp" placeholder="Who with" value={appt.who || ""} onChange={(e) => onAppt({ ...appt, who: e.target.value })} />
       </div>
+      {/* a date typed in to see what the field did should not be a standing
+          appointment with no way out of it */}
+      {(appt.date || appt.who) && (
+        <div className="btnrow" style={{ marginTop: 10 }}>
+          <button className="btn sm" onClick={() => onAppt({ ...appt, date: "", who: "" })}>
+            Clear appointment
+          </button>
+        </div>
+      )}
 
       <div className="rowlab">To raise</div>
       {questions.length === 0 && <div className="note">Nothing on the list yet.</div>}
@@ -3134,65 +3145,51 @@ function PlanEditor({ regimen, onChange, onClose }) {
   );
 }
 
-// The bar is the control, read like a star rating: each dose in the plan is its
-// own segment, and tapping one says "I have done this many". That makes every
-// value reachable in a single tap in both directions, including back to nothing,
-// so there is no cycling round to correct an over-tap and nothing transient to
-// catch. Tapping the segment you are already on steps back off it.
+// Tap the bar, anywhere on it, and it records one more. That is the whole of the
+// forward direction — no aiming at a segment, no jumping to a value you did not
+// mean. Once the plan is full the same tap starts counting extra sessions, so
+// "I did another one" is one gesture whatever the bar currently says.
 //
-// Extras sit underneath and only once the plan is finished, because an extra
-// session is only meaningful against a full day. Keeping them off the bar is
-// what lets the bar mean exactly one thing.
+// The minus beside it is the way back, one step at a time, all the way to
+// nothing. That is the piece that was missing originally: the bar used to wrap
+// round to zero because there was nowhere else for a tap to go. Nothing wraps
+// now. Its slot is always reserved so the bar cannot change width under your
+// thumb mid-tap, but it only shows itself once there is something to take back.
 function DosePill({ label, count, target, onSet, valueText, allowExtra = true }) {
   const capped = Math.min(count, target);
   const extra = Math.max(0, count - target);
   const full = capped >= target;
   const pct = (capped / target) * 100;
   const say = valueText || (full ? (extra ? `Done +${extra}` : "Done") : `${capped} of ${target}`);
-  // dropping below the plan drops the extras with it: an extra dose on a day you
-  // did not finish is not a thing the log should be able to hold
-  const setTo = (n) => onSet(n >= target ? target + extra : n);
+  // extras stop somewhere: past this it is a stuck thumb, not a session
+  const ceiling = target + (allowExtra ? 9 : 0);
   return (
     <div className="doserow">
-      <div className={"dosepill" + (full ? " full" : "") + (extra ? " over" : "")}>
+      <button
+        className={"dosepill" + (full ? " full" : "") + (extra ? " over" : "")}
+        onClick={() => count < ceiling && onSet(count + 1)}
+        aria-label={`${label}, ${capped} of ${target}${extra ? `, ${extra} extra` : ""}. Record one more.`}
+      >
         <span className="dosefill" style={{ width: pct + "%" }} />
+        {target > 1 && (
+          <span className="ticks">
+            {Array.from({ length: target }).map((_, i) => (
+              <i key={i} />
+            ))}
+          </span>
+        )}
         <span className="lbl">{label}</span>
         <span className="val">{say}</span>
-        <span className="segs">
-          {Array.from({ length: target }).map((_, i) => {
-            const to = i + 1 === capped ? i : i + 1;
-            return (
-              <button
-                key={i}
-                className={"seg" + (i < capped ? " on" : "")}
-                onClick={() => setTo(to)}
-                aria-label={`${label}, set to ${to} of ${target}`}
-              />
-            );
-          })}
-        </span>
-      </div>
-      {/* Beside the bar rather than under it, and only once this treatment is
-          finished. A row of text links under every completed pill was four lines
-          of clutter every evening to serve something used once in a while. */}
-      {allowExtra && full && (
-        <>
-          {extra > 0 && (
-            <button className="xbtn" onClick={() => onSet(count - 1)} aria-label={`One less extra ${label}`}>
-              {"\u2212"}
-            </button>
-          )}
-          <button
-            className={"xbtn" + (extra ? " on" : "")}
-            onClick={() => extra < 9 && onSet(count + 1)}
-            disabled={extra >= 9}
-            aria-label={extra ? `${extra} extra, add another` : `Record an extra ${label} session`}
-            title="Extra session"
-          >
-            {extra ? "+" + extra : "+"}
-          </button>
-        </>
-      )}
+      </button>
+      <button
+        className="xbtn"
+        style={count > 0 ? undefined : { visibility: "hidden" }}
+        onClick={() => count > 0 && onSet(count - 1)}
+        aria-label={`${label}, one less`}
+        title="One less"
+      >
+        {"\u2212"}
+      </button>
     </div>
   );
 }
@@ -4291,8 +4288,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           ) : (
             planTotal > 0 && (
               <div className="note" style={{ marginTop: 12 }}>
-                Tap along the bar to set how many doses you have done. Tap where you are to take one back. A
-                finished treatment gets a + beside it for an extra session.
+                Tap a bar to record a dose, and again past a full one for an extra session. The minus takes one
+                back.
               </div>
             )
           )}
