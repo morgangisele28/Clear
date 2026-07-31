@@ -598,6 +598,9 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 /* not .saved — that name is already taken by the floating toast further down */
 .savednote{display:flex;align-items:center;gap:13px;background:#fff;border-radius:22px;
   padding:16px 18px;margin-top:12px;box-shadow:var(--float);}
+.savednote.todo{box-shadow:var(--float),inset 0 0 0 1.5px rgba(5,123,193,.28);}
+.savednote.todo .tick{background:var(--accent-soft);color:var(--accent);}
+.savednote .btn{flex:0 0 auto;}
 .savednote .tick{width:31px;height:31px;flex:0 0 auto;border-radius:50%;background:var(--ok);color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:15px;}
 .savednote .tx{flex:1;font-size:12.5px;color:var(--muted);line-height:1.5;}
@@ -831,7 +834,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.6";
+const BUILD = "2.7";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1240,8 +1243,38 @@ function wellRun(days, episodes) {
     best,
     target,
     clarity: noHistory ? 0.55 : Math.min(current / target, 1),
+    noHistory,
     isBest: best > 0 && current > best,
   };
+}
+
+// The run that belongs on the daily screen: days in a row you finished your plan.
+// Days-since-an-episode measures luck as much as effort and resets through no fault
+// of yours; this is the thing you can still change this morning. Today only counts
+// once it is done, so the streak is not shown as broken at nine in the morning.
+function careRun(days, regimen) {
+  const today = todayISO();
+  const keys = Object.keys(days || {}).sort();
+  const plan = planOf(days[today], regimen);
+  if (!plan.length) return { current: 0, best: 0, rate: null, hasPlan: false };
+  let current = 0;
+  let d = careComplete(days[today], regimen) ? today : addDays(today, -1);
+  while (careComplete(days[d], regimen)) {
+    current++;
+    d = addDays(d, -1);
+  }
+  let best = 0;
+  let n = 0;
+  for (let x = keys.length ? keys[0] : today; x <= today; x = addDays(x, 1)) {
+    if (careComplete(days[x], regimen)) {
+      n++;
+      if (n > best) best = n;
+    } else n = 0;
+  }
+  // how the last fortnight actually went, which is what the sky reflects
+  let done = 0;
+  for (let i = 0; i < 14; i++) if (careComplete(days[addDays(today, -i)], regimen)) done++;
+  return { current, best, rate: done / 14, hasPlan: true };
 }
 
 const MILESTONES = [30, 60, 90, 180, 270, 365];
@@ -3412,7 +3445,7 @@ function statusLine(episodes, days, date) {
 // `compact` is the daily screen: the ring stays, because today's doses are the thing
 // you can still act on, and the run of clear days moves to History where the slower
 // numbers live. It was taking the space the day's actual work needed.
-function Hero({ episodes, days, date, run, regimen, compact }) {
+function Hero({ episodes, days, date, run, care, regimen, compact }) {
   const n = doseCount(days[date], regimen);
   const total = Math.max(doseTotal(planOf(days[date], regimen)), 1);
   const st = statusLine(episodes, days, date);
@@ -3429,6 +3462,21 @@ function Hero({ episodes, days, date, run, regimen, compact }) {
           "Mark today well or unwell to start tracking episodes"
         )}
       </div>
+      {compact && care.hasPlan && care.current > 0 && (
+        <div className="run">
+          <div className={"run-bar" + (care.best > 0 && care.current >= care.best ? " best" : "")}>
+            <span style={{ width: Math.min((care.current / Math.max(care.best, 7)) * 100, 100) + "%" }} />
+          </div>
+          <div className="run-lab">
+            <span>
+              <b>{care.current}</b> {care.current === 1 ? "day" : "days"} of care in a row
+            </span>
+            <span className={care.best > 0 && care.current >= care.best ? "pb" : ""}>
+              {care.best > 0 && care.current >= care.best ? "your best yet" : care.best ? `best ${care.best}` : ""}
+            </span>
+          </div>
+        </div>
+      )}
       {!compact && run.current > 0 && (
         <div className="run">
           <div className={"run-bar" + (run.isBest ? " best" : "")}>
@@ -3554,6 +3602,10 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   );
 
   const careDone = doseCount(day, state.regimen);
+  // what is left of the plan today, by name, for the prompt at the foot of the page
+  const careLeft = todayPlan
+    .map((r) => ({ name: r.name, left: Math.max(0, r.target - (day.care[r.id] || 0)) }))
+    .filter((r) => r.left > 0);
 
   const exac = useMemo(() => {
     const sy = day.symptoms || {};
@@ -4241,15 +4293,40 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         </>
       )}
 
-      {/* Entries write themselves as they are typed. Without something saying so at the
-          end of the page it reads as an unsubmitted form, and people back out worrying
-          they have lost the lot. */}
-      <div className="savednote no-print">
-        <div className="tick">{"✓"}</div>
+      {/* The foot of the page is the last thing seen before the app is closed, so it
+          reports what is still outstanding rather than confirming you arrived. Feeling
+          well is exactly when the nebuliser gets forgotten. */}
+      <div className={"savednote no-print" + (careLeft.length ? " todo" : "")}>
+        <div className="tick">{careLeft.length ? "○" : "✓"}</div>
         <div className="tx">
-          <b>{logged ? "Saved" : "Nothing logged yet"}</b>
-          {logged ? "This day is stored on your device." : "Entries save as you type."}
+          {careLeft.length ? (
+            <>
+              <b>Still to do today</b>
+              {careLeft.map((r) => r.name + (r.left > 1 ? " ×" + r.left : "")).join(", ")}
+            </>
+          ) : todayPlan.length ? (
+            <>
+              <b>Your care is done for today</b>
+              {logged ? "This day is saved on your device." : "Entries save as you type."}
+            </>
+          ) : (
+            <>
+              <b>{logged ? "Saved" : "Nothing logged yet"}</b>
+              {logged ? "This day is stored on your device." : "Entries save as you type."}
+            </>
+          )}
         </div>
+        {careLeft.length > 0 && (
+          <button
+            className="btn sm"
+            onClick={() => {
+              const el = [...document.querySelectorAll(".card")].find((c) => /Today's care/.test(c.textContent));
+              if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+          >
+            Go
+          </button>
+        )}
       </div>
 
       {logged && (
@@ -5612,6 +5689,10 @@ function App() {
   const episodes = useMemo(() => buildEpisodes(state.days, state.courses), [state.days, state.courses]);
 
   const run = useMemo(() => wellRun(state.days, episodes), [state.days, episodes, today]);
+  const care = useMemo(() => careRun(state.days, state.regimen), [state.days, state.regimen, today]);
+  // Clouds clear as you keep up your care, rather than as time passes since an
+  // illness. Same picture, but tied to something you can do something about.
+  const clarity = care.hasPlan ? 0.25 + 0.75 * care.rate : run.clarity;
 
   // particulate drift scales with the air she is actually breathing
   const moteOpacity = useMemo(() => {
@@ -5987,11 +6068,11 @@ function App() {
 
       <div
         className={"sky no-print" + (tab === "today" ? "" : " compact")}
-        style={{ "--clarity": run.clarity }}
+        style={{ "--clarity": clarity }}
       >
         {tab === "today" && (
           <>
-            <div className="clouds" style={{ opacity: 0.2 + 0.62 * (1 - run.clarity) }}>
+            <div className="clouds" style={{ opacity: 0.2 + 0.62 * (1 - clarity) }}>
               <CloudLayer cls="cl-far" id="cf" seed="7" freq="0.004 0.011" cut="-0.62" gain="1.5" />
               <CloudLayer cls="cl-mid" id="cm" seed="19" freq="0.006 0.017" cut="-0.7" gain="1.7" />
               <CloudLayer cls="cl-near" id="cn" seed="31" freq="0.009 0.024" cut="-0.78" gain="1.9" />
@@ -5999,7 +6080,7 @@ function App() {
             <div className="motes" style={{ opacity: moteOpacity }} />
           </>
         )}
-        <div className="haze" style={{ opacity: 0.42 * (1 - run.clarity) }} />
+        <div className="haze" style={{ opacity: 0.42 * (1 - clarity) }} />
         <div className="sky-in">
           <div className="sky-title">
             <h1>{TITLES[tab][0]}</h1>
@@ -6079,7 +6160,7 @@ function App() {
                 onIll={() => setStatus(date, "unwell")}
                 onClear={() => setStatus(date, null)}
               />
-              <Hero episodes={episodes} days={state.days} date={date} run={run} regimen={state.regimen} compact />
+              <Hero episodes={episodes} days={state.days} date={date} run={run} care={care} regimen={state.regimen} compact />
               <GlassStats days={state.days} date={date} regimen={state.regimen} />
             </>
           )}
