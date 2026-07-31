@@ -1,6 +1,6 @@
 {
   "name": "clear",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "type": "module",
   "description": "A private log for bronchiectasis, cystic fibrosis and COPD. All data stays on the user's device.",
