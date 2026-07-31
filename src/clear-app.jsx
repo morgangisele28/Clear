@@ -295,17 +295,17 @@ const CSS = `
 .glass{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:24px;
   background:rgba(8,54,69,.30);border-radius:18px;overflow:hidden;
   box-shadow:0 1px 0 rgba(255,255,255,.24) inset, 0 12px 28px -16px rgba(8,54,69,.75);}
-.gcard{background:rgba(8,54,69,.22);padding:13px 9px;text-align:center;color:#fff;
+.gcard{background:rgba(8,54,69,.22);padding:17px 10px;text-align:center;color:#fff;
   -webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);}
 .gcard .k{font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;opacity:.82;}
-.gcard .v{font-size:16px;font-weight:500;letter-spacing:-0.005em;margin-top:6px;line-height:1.2;text-shadow:0 1px 3px rgba(8,54,69,.30);
+.gcard .v{font-size:16px;font-weight:500;letter-spacing:-0.005em;margin-top:8px;line-height:1.2;text-shadow:0 1px 3px rgba(8,54,69,.30);
   display:flex;align-items:center;justify-content:center;gap:6px;min-height:20px;}
 .gcard .v small{font-size:10.5px;font-weight:400;opacity:.72;letter-spacing:0;font-family:var(--body);}
 .gswatch{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.6);flex:0 0 auto;}
 
 /* ---------- sheet ---------- */
 .sheet{background:var(--canvas);border-radius:26px 26px 0 0;margin:-26px auto 0;position:relative;z-index:2;
-  max-width:720px;padding:18px 16px 130px;box-shadow:0 -1px 0 rgba(255,255,255,.7) inset, 0 -14px 30px -18px rgba(8,54,69,.45);}
+  max-width:720px;padding:20px 17px 130px;box-shadow:0 -1px 0 rgba(255,255,255,.7) inset, 0 -14px 30px -18px rgba(8,54,69,.45);}
 /* pan-y hands vertical scrolling back to the browser while the horizontal axis stays
    ours to drag; the controls below need their own axis back */
 .sheet.swipeable{touch-action:pan-y;}
@@ -314,8 +314,8 @@ const CSS = `
 .sheet.swipeable .week,.sheet.swipeable .ribbon{touch-action:auto;}
 
 /* ---------- sections ---------- */
-.card{background:#fff;border:none;border-radius:22px;padding:18px;margin-top:12px;box-shadow:var(--float);}
-.card-t{margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.card{background:#fff;border:none;border-radius:22px;padding:21px 20px;margin-top:14px;box-shadow:var(--float);}
+.card-t{margin:0 0 17px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
 .card-t.foldy{cursor:pointer;list-style:none;margin-bottom:0;}
 .card-t.foldy::-webkit-details-marker{display:none;}
 details[open] .card-t.foldy{margin-bottom:14px;}
@@ -385,7 +385,7 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .seg button.on{background:var(--accent);color:#fff;font-weight:500;box-shadow:none;}
 .seg.sm button{font-size:11.5px;padding:9px 4px;min-width:0;}
 .seg.alarm button.on{background:var(--alarm);}
-.rowlab{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin:22px 0 9px;}
+.rowlab{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin:24px 0 11px;}
 
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
 .chip{padding:8px 14px;border-radius:99px;border:none;background:var(--paper);box-shadow:none;font-size:12px;color:var(--ink-2);}
@@ -431,7 +431,7 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
   background:#fff;box-shadow:0 1px 3px rgba(8,54,69,.25);transition:transform .22s var(--ease);}
 .trackrow.on .tr-sw{background:var(--accent);}
 .trackrow.on .tr-sw i{transform:translateX(18px);}
-.doserow{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.doserow{display:flex;align-items:center;gap:8px;margin-top:9px;}
 .dosepill{position:relative;flex:1;min-width:0;height:50px;border:none;border-radius:15px;background:var(--paper);
   padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;color:var(--ink);}
 .dosefill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);
@@ -477,9 +477,9 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .resp-row .val.good{color:var(--ok);}
 .resp-row .val.none{color:var(--faint);font-weight:400;}
 
-.vitals{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-.vit{border:none;border-radius:14px;padding:12px 14px;background:var(--paper);box-shadow:none;}
-.vit label{display:block;font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.vitals{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
+.vit{border:none;border-radius:14px;padding:14px 15px;background:var(--paper);box-shadow:none;}
+.vit label{display:block;font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .vit input{width:100%;border:none;outline:none;background:none;font-size:21px;font-weight:400;letter-spacing:-0.02em;line-height:1.25;color:var(--ink);padding:0;}
 .vit input::placeholder{color:#D3DCE4;}
 
@@ -555,10 +555,10 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .zonemark{position:relative;height:0;}
 .zonemark span{position:absolute;top:-17px;transform:translateX(-50%);width:2px;height:14px;
   background:var(--ink);border-radius:2px;}
-.remind{display:flex;align-items:center;gap:9px;background:#fff;border-radius:18px;
-  padding:11px 11px 11px 16px;margin-top:12px;box-shadow:var(--float);}
+.remind{display:flex;align-items:center;gap:11px;background:#fff;border-radius:18px;
+  padding:14px 14px 14px 19px;margin-top:14px;box-shadow:var(--float);}
 .remind .txt{flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-0.005em;line-height:1.25;}
-.remind .txt small{display:block;font-weight:400;color:var(--faint);font-size:10.5px;margin-top:2px;}
+.remind .txt small{display:block;font-weight:400;color:var(--faint);font-size:10.5px;margin-top:4px;}
 .remind input{width:78px;flex:0 0 auto;border:none;background:var(--paper);border-radius:12px;padding:9px 6px;
   font-family:var(--display);font-size:17px;font-weight:500;text-align:center;color:var(--ink);outline:none;letter-spacing:-0.01em;}
 .remind input::placeholder{color:#BCC7D1;font-size:12.5px;font-family:var(--body);letter-spacing:0;}
@@ -931,7 +931,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.2";
+const BUILD = "3.3";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
