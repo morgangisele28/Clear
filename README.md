@@ -1,6 +1,6 @@
 # Clear
 
-**A private log for bronchiectasis. Runs in your browser, keeps every entry on your device, and writes up your exacerbations for your respiratory team.**
+**A private log for bronchiectasis, cystic fibrosis and COPD. Runs in your browser, keeps every entry on your device, and writes up your exacerbations for your respiratory team.**
 
 Every time I got another chest infection I hit the same wall. How long was I ill last time? Did I see anyone? What did they prescribe, at what dose, and did it actually work? What was my sputum doing on day three? I could never remember, which turned every appointment into a guessing game.
 
@@ -30,7 +30,7 @@ Open that on your phone and add it to your home screen. Nothing to sign up for, 
 
 ![Match it on a scale that holds](screenshots/clear-store-04-sputum.jpg)
 
-**It counts exacerbation features for you.** The standard definition is three or more of: increased cough, increased sputum volume, increased purulence, breathlessness, fatigue, haemoptysis. You are already recording all six, so the app counts them and names which ones are present. It is a count of what you logged, not a diagnosis.
+**It counts exacerbation features for you, against your own condition's definition.** Bronchiectasis counts three or more of six: increased cough, sputum volume, purulence, breathlessness, fatigue, haemoptysis. COPD uses a different rule — two or more of breathlessness, sputum volume and purulence. You are already recording all of them, so the app counts each rule separately and names which features are present. Pick more than one condition and you see more than one count, because they often come together and blending them would make both wrong. It is a count of what you logged, not a diagnosis.
 
 ![It knows what an exacerbation is](screenshots/clear-store-05-exacerbation.jpg)
 

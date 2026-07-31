@@ -1,9 +1,9 @@
 {
   "name": "clear",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
-  "description": "A private log for bronchiectasis. All data stays on the user's device.",
+  "description": "A private log for bronchiectasis, cystic fibrosis and COPD. All data stays on the user's device.",
   "scripts": {
     "build": "node build/build.mjs",
     "screenshots": "node build/screenshots.mjs"
