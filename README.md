@@ -8,7 +8,7 @@ So I built this. It is the log I wanted and could not find.
 
 No account. No server. Nothing is sent anywhere. Add it to your home screen and it behaves like an app, offline.
 
-## → [Open Clear](https://morgangisele28.github.io/Clear/)
+## → [Open Clear](https://clearlungs.app)
 
 Open that on your phone and add it to your home screen. Nothing to sign up for, nothing to install from a store. Instructions below.
 
@@ -60,7 +60,7 @@ Swipe sideways to move between days, and the date stays with you as you scroll. 
 
 ## Install it
 
-**On your phone, open [https://morgangisele28.github.io/Clear/](https://morgangisele28.github.io/Clear/)**
+**On your phone, open [https://clearlungs.app](https://clearlungs.app)**
 
 1. iPhone: use **Safari** (not Chrome). Tap the Share button, scroll down, tap **Add to Home Screen**, then **Add**.
 2. Android: use **Chrome**. Tap the three-dot menu, then **Install app** or **Add to Home screen**.
