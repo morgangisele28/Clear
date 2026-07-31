@@ -246,7 +246,9 @@ const CSS = `
 .cal-head .m{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.01em;}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px;}
 .cal-dow span{text-align:center;font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;color:var(--faint);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+/* pan-y hands the vertical axis back to the browser and keeps the horizontal one
+   here, so dragging the grid changes month instead of nudging the page sideways */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;touch-action:pan-y;}
 .cal-cell{position:relative;aspect-ratio:1;border:none;border-radius:11px;background:var(--paper);padding:0;
   display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;
   font-weight:500;color:var(--ink-2);overflow:hidden;}
@@ -329,6 +331,12 @@ const CSS = `
 .card-t.foldy{cursor:pointer;list-style:none;margin-bottom:0;}
 .card-t.foldy::-webkit-details-marker{display:none;}
 details[open] .card-t.foldy{margin-bottom:14px;}
+/* a chevron so a rolled-up section reads as openable rather than as a card that
+   lost its contents; it points down when shut and up when open */
+.chev{width:8px;height:8px;display:inline-block;margin-left:7px;vertical-align:1px;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:1px;
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s var(--ease);opacity:.75;}
+details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px);}
 .sectionhead{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:0.06em;
   text-transform:uppercase;color:var(--faint);margin:26px 4px 2px;}
 /* settings live inside the sheet, which is already white, so the cards drop the
@@ -463,9 +471,11 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .dosepill .ticks{position:absolute;inset:0;display:flex;pointer-events:none;}
 .dosepill .ticks i{flex:1;border-right:1px solid rgba(255,255,255,.85);}
 .dosepill .ticks i:last-child{border-right:none;}
-.xtra{width:44px;height:50px;flex:0 0 auto;border-radius:15px;border:none;background:var(--paper);color:var(--muted);
-  font-family:var(--display);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0;}
-.xtra.on{background:var(--sky-3);color:var(--sky-1);}
+/* extras read as a deliberate overshoot rather than as a fuller kind of done */
+.dosepill.over .dosefill{background:var(--sky-3);}
+.undorow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;
+  padding:9px 6px 9px 14px;border-radius:14px;background:var(--paper);
+  font-size:12.5px;color:var(--muted);animation:rise .28s var(--ease) both;}
 .careweek{display:flex;align-items:center;gap:4px;}
 .cw{width:9px;height:9px;border-radius:3px;background:var(--paper-2);}
 .cw.part{background:#A8CEDE;}
@@ -949,7 +959,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.4.1";
+const BUILD = "3.5";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -2001,7 +2011,13 @@ function Info({ title, children, label }) {
       <button
         className={label ? "btn" : "infob"}
         aria-label={label ? undefined : "More about " + title}
-        onClick={() => setOpen(true)}
+        // some of these sit inside a <summary>, where a plain click would roll the
+        // section up underneath the sheet it just opened
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
       >
         {label || "i"}
       </button>
@@ -2786,6 +2802,34 @@ function Gear() {
 // signals were showing and how serious each one was — so a new signal, or an
 // existing one stepping up from a note to a watch, brings the card straight back.
 // Only the exact set you actually read stays hidden.
+// A card heading you can roll up. The open state is remembered per section, so
+// somebody who never fills symptoms in is not reopening the same list every day.
+// Until it has been touched the fallback decides, and every fallback errs open
+// when the day already holds something — collapsing must never hide an entry.
+function Fold({ id, title, hint, info, open, onToggle, children }) {
+  return (
+    <details
+      open={open}
+      onToggle={(e) => {
+        const v = e.currentTarget.open;
+        if (v !== open) onToggle(id, v);
+      }}
+    >
+      <summary className="card-t foldy">
+        <span className="ttl">
+          {title}
+          {info}
+        </span>
+        <span className="hint">
+          {hint}
+          <i className="chev" aria-hidden="true" />
+        </span>
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 function EarlyWarning({ days, regimen, seen, onDismiss }) {
   const signals = useMemo(() => earlyWarning(days, regimen), [days, regimen]);
   // built from the kind and level, never the wording: the sentences carry live
@@ -3057,17 +3101,25 @@ function PlanEditor({ regimen, onChange, onClose }) {
   );
 }
 
+// One control, not two. A tap fills the next dose; once the bar is full another
+// tap starts counting extra sessions rather than wrapping back to nothing, which
+// is what made a single over-tap so awkward to walk back. Undoing is not a
+// gesture on this pill — it is the Undo that appears on the card after any tap,
+// because a hidden gesture is exactly what was missing before.
 function DosePill({ label, count, target, onSet, valueText, allowExtra = true }) {
   const capped = Math.min(count, target);
   const extra = Math.max(0, count - target);
   const full = capped >= target;
   const pct = (capped / target) * 100;
+  // extras stop somewhere: past this it is a mis-tap, not a session
+  const next = full && (!allowExtra || extra >= 9) ? count : count + 1;
+  const say = valueText || (full ? (extra ? `Done +${extra}` : "Done") : `${capped} of ${target}`);
   return (
     <div className="doserow">
       <button
-        className={"dosepill" + (full ? " full" : "")}
-        onClick={() => onSet(full ? 0 : capped + 1)}
-        aria-label={`${label}, ${capped} of ${target}`}
+        className={"dosepill" + (full ? " full" : "") + (extra ? " over" : "")}
+        onClick={() => next !== count && onSet(next)}
+        aria-label={`${label}, ${capped} of ${target}${extra ? `, ${extra} extra` : ""}`}
       >
         <span className="dosefill" style={{ width: pct + "%" }} />
         {target > 1 && (
@@ -3078,18 +3130,8 @@ function DosePill({ label, count, target, onSet, valueText, allowExtra = true })
           </span>
         )}
         <span className="lbl">{label}</span>
-        <span className="val">{valueText || (full ? "Done" : `${capped} of ${target}`)}</span>
+        <span className="val">{say}</span>
       </button>
-      {allowExtra && (
-        <button
-          className={"xtra" + (extra > 0 ? " on" : "")}
-          aria-label={`Extra ${label} session`}
-          onClick={() => onSet(extra >= 2 ? target : count + 1)}
-          title="Record an extra session"
-        >
-          {extra > 0 ? "+" + extra : "+"}
-        </button>
-      )}
     </div>
   );
 }
@@ -3727,6 +3769,49 @@ function MonthPanel({ days, date, setDate, onClose, regimen }) {
   const logged = cells.filter((c) => c && days[c] && days[c].status).length;
   const cared = cells.filter((c) => c && careComplete(days[c], regimen)).length;
 
+  // Drag the grid sideways to change month. The page's own day-swipe is disabled
+  // while this panel is open, so the axis is ours and nothing has to be shared.
+  const atLatest = cursor >= today.slice(0, 7);
+  const grab = useRef(null);
+  const gridRef = useRef(null);
+  const [dx, setDx] = useState(0);
+  const [glide, setGlide] = useState(false);
+  const start = (e) => {
+    const t = e.touches && e.touches[0];
+    if (!t) return;
+    grab.current = { x: t.clientX, y: t.clientY, axis: null, at: Date.now() };
+    setGlide(false);
+  };
+  const move = (e) => {
+    const g = grab.current;
+    const t = e.touches && e.touches[0];
+    if (!g || !t) return;
+    const ax = t.clientX - g.x;
+    const ay = t.clientY - g.y;
+    if (g.axis === null) {
+      if (Math.abs(ax) < 8 && Math.abs(ay) < 8) return;
+      g.axis = Math.abs(ax) > Math.abs(ay) * 1.2 ? "x" : "y";
+      if (g.axis === "y") {
+        grab.current = null;
+        return;
+      }
+    }
+    // no month after this one, so dragging forward drags heavy
+    setDx(ax < 0 && atLatest ? ax * 0.25 : ax);
+  };
+  const end = () => {
+    const g = grab.current;
+    grab.current = null;
+    setGlide(true);
+    if (!g || g.axis !== "x") return setDx(0);
+    const w = (gridRef.current && gridRef.current.offsetWidth) || 320;
+    const far = Math.abs(dx) > Math.min(84, w * 0.26);
+    const flick = Date.now() - g.at < 320 && Math.abs(dx) > 38;
+    const forward = dx < 0;
+    if ((far || flick) && !(forward && atLatest)) shift(forward ? 1 : -1);
+    setDx(0);
+  };
+
   return (
     <div className="card cal">
       <div className="cal-head">
@@ -3748,7 +3833,19 @@ function MonthPanel({ days, date, setDate, onClose, regimen }) {
         ))}
       </div>
 
-      <div className="cal-grid">
+      <div
+        className="cal-grid"
+        ref={gridRef}
+        onTouchStart={start}
+        onTouchMove={move}
+        onTouchEnd={end}
+        onTouchCancel={end}
+        style={{
+          transform: dx ? `translate3d(${dx}px,0,0)` : undefined,
+          opacity: dx ? Math.max(0.45, 1 - Math.abs(dx) / 420) : undefined,
+          transition: glide ? "transform .2s var(--ease), opacity .2s var(--ease)" : "none",
+        }}
+      >
         {cells.map((c, i) => {
           if (!c) return <div className="cal-cell blank" key={"b" + i} />;
           const day = days[c];
@@ -3952,11 +4049,41 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning, onFold }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
   const sputumRecorded = day.sputum.color != null;
+
+  // How much is in each foldable section today. It doubles as the hint on a
+  // rolled-up heading and as the fallback for whether to roll it up at all.
+  const symptomsLogged = Object.values(day.symptoms || {}).filter((v) => v > 0).length;
+  const vitalsLogged = ["peakFlow", "fev1", "spo2", "temp", "restHr", "weight"].filter(
+    (k) => day[k] !== "" && day[k] != null
+  ).length + (day.mmrc != null ? 1 : 0);
+  const foldOpen = (id, fallback) => {
+    const f = (state.folds || {})[id];
+    return f === undefined ? fallback : f;
+  };
+  const setFold = (id, open) => onFold(id, open);
+
+  // The last dose tapped, so it can be put back. Deliberately not a gesture: not
+  // knowing how to undo was the complaint, and a swipe would only move the
+  // problem. It clears itself, so the card is not carrying a stale offer.
+  const [undo, setUndo] = useState(null);
+  useEffect(() => {
+    if (!undo) return;
+    const t = setTimeout(() => setUndo(null), 7000);
+    return () => clearTimeout(t);
+  }, [undo]);
+  // a new day is a new context; an Undo left over from yesterday would put a dose
+  // back on a card you are no longer looking at
+  useEffect(() => setUndo(null), [date]);
+  // wraps a dose setter so every tap leaves a way back to the count before it
+  const withUndo = (label, prev, set) => (n) => {
+    setUndo({ label, back: () => set(prev) });
+    set(n);
+  };
 
   const [showCourse, setShowCourse] = useState(false);
   const [editCourseId, setEditCourseId] = useState(null);
@@ -4098,7 +4225,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
               label={r.name}
               target={r.target}
               count={day.care[r.id] || 0}
-              onSet={(n) => setCare(r.id, n)}
+              onSet={withUndo(r.name, day.care[r.id] || 0, (n) => setCare(r.id, n))}
             />
           ))}
           {careDone >= planTotal && planTotal > 0 ? (
@@ -4109,9 +4236,24 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           ) : (
             planTotal > 0 && (
               <div className="note" style={{ marginTop: 12 }}>
-                The plus records an extra session.
+                Tap to fill a dose. Tap a full one again to record an extra session.
               </div>
             )
+          )}
+
+          {undo && (
+            <div className="undorow">
+              <span>{undo.label} changed</span>
+              <button
+                className="btn sm"
+                onClick={() => {
+                  undo.back();
+                  setUndo(null);
+                }}
+              >
+                Undo
+              </button>
+            </div>
           )}
 
           {/* Pausing sets the same active flag the plan editor uses, so a paused
@@ -4173,7 +4315,9 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                     label={c.drug}
                     target={c.freq}
                     count={(day.courseDoses || {})[c.id] || 0}
-                    onSet={(n) => setCourseDose(date, c.id, n)}
+                    onSet={withUndo(c.drug, (day.courseDoses || {})[c.id] || 0, (n) =>
+                      setCourseDose(date, c.id, n)
+                    )}
                     allowExtra={false}
                   />
                   {c.note ? <div className="note dosenote">{c.note}</div> : null}
@@ -4253,9 +4397,13 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   const symptomSection = (
     <div className="card">
-      <div className="card-t">
-        <span className="ttl">
-          Symptoms
+      <Fold
+        id="symptoms"
+        open={foldOpen("symptoms", isUnwell || symptomsLogged > 0)}
+        onToggle={setFold}
+        title="Symptoms"
+        hint={symptomsLogged ? `${symptomsLogged} logged` : "none · mild · moderate · severe"}
+        info={
           <Info title="Symptoms">
             <p>Set each one to none, mild, moderate or severe.</p>
             <p>
@@ -4265,16 +4413,18 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             </p>
             <p>Six of these are the standard exacerbation features, which the app counts for you.</p>
           </Info>
-        </span>
-        <span className="hint">none · mild · moderate · severe</span>
-      </div>
-      <SymptomList
-        day={day}
-        custom={state.customSymptoms || []}
-        onSet={upSym}
-        onAddCustom={addCustomSymptom}
-        onDeleteCustom={deleteCustomSymptom}
-      />
+        }
+      >
+        <SymptomList
+          day={day}
+          custom={state.customSymptoms || []}
+          onSet={upSym}
+          onAddCustom={addCustomSymptom}
+          onDeleteCustom={deleteCustomSymptom}
+        />
+      </Fold>
+      {/* the exacerbation count sits outside the fold on purpose: it is the one
+          thing on this card you must not be able to roll away out of sight */}
       {rules.filter((r) => r.met).map((r) =>
         r.key === "copd" ? (
           <div className="banner" key={r.key}>
@@ -4328,10 +4478,13 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
     <>
       {anyVital && (
       <div className="card">
-        <div className="card-t">
-          <span>Measurements</span>
-          <span className="hint">blank if not taken</span>
-        </div>
+        <Fold
+          id="vitals"
+          open={foldOpen("vitals", vitalsLogged > 0)}
+          onToggle={setFold}
+          title="Measurements"
+          hint={vitalsLogged ? `${vitalsLogged} recorded` : "blank if not taken"}
+        >
         <div className="vitals">
           {tracks("peakFlow") && (
             <div className="vit">
@@ -4400,6 +4553,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         {tracks("peakFlow") && date !== todayISO() && day.peakFlow !== "" && (
           <PeakFlowInsight days={state.days} date={date} value={day.peakFlow} />
         )}
+        </Fold>
       </div>
       )}
 
@@ -6448,6 +6602,11 @@ function App() {
   // anything new or anything worse gets past it
   const dismissWarning = useCallback((sig) => setState((s) => ({ ...s, ewSeen: sig })), []);
 
+  const setFoldOpen = useCallback(
+    (id, open) => setState((s) => ({ ...s, folds: { ...(s.folds || {}), [id]: open } })),
+    []
+  );
+
   const setRescue = useCallback((r) => setState((s) => ({ ...s, rescue: r })), []);
   const setAppt = useCallback((a) => setState((s) => ({ ...s, appt: a })), []);
   const setQuestions = useCallback((q) => setState((s) => ({ ...s, questions: q })), []);
@@ -6808,6 +6967,7 @@ function App() {
             setRescue={setRescue}
             setQuestions={setQuestions}
             onDismissWarning={dismissWarning}
+            onFold={setFoldOpen}
             addCustomDrug={addCustomDrug}
             setCourseOutcome={setCourseOutcome}
             setCourseNote={setCourseNote}
