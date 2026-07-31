@@ -181,7 +181,9 @@ const CSS = `
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadein .25s var(--ease) both;}
 .modal{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:720px;margin:0 auto;
   background:#fff;border-radius:26px 26px 0 0;max-height:86vh;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;padding:26px 22px calc(30px + env(safe-area-inset-bottom));
+  /* the tab bar sits over the foot of the sheet, so the last paragraph needs room to
+     scroll clear of it rather than ending underneath */
+  -webkit-overflow-scrolling:touch;padding:26px 22px calc(104px + env(safe-area-inset-bottom));
   box-shadow:0 -20px 50px -20px rgba(8,54,69,.5);animation:slideup .38s var(--ease) both;}
 @keyframes slideup{from{transform:translate3d(0,40px,0);opacity:0;}to{transform:none;opacity:1;}}
 .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
@@ -312,6 +314,11 @@ const CSS = `
 /* ---------- sections ---------- */
 .card{background:#fff;border:none;border-radius:22px;padding:18px;margin-top:12px;box-shadow:var(--float);}
 .card-t{margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.infob{width:19px;height:19px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
+  background:var(--paper-2);color:var(--muted);font-family:var(--display);font-size:11px;
+  font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+  vertical-align:middle;margin-left:7px;}
+.card-t .ttl{display:flex;align-items:center;min-width:0;}
 .card-t>span:first-child{font-size:12.5px;font-weight:500;letter-spacing:0;color:var(--muted);line-height:1.4;}
 .card-t .hint{font-weight:400;font-size:11px;color:var(--faint);text-align:right;}
 .card.flat{background:var(--paper);border-radius:14px;padding:15px;margin-top:14px;box-shadow:none;}
@@ -790,7 +797,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.2";
+const BUILD = "2.3";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1742,6 +1749,40 @@ async function saveState(s) {
 /*  Small components                                                   */
 /* ------------------------------------------------------------------ */
 
+// A tap for the longer version. The screen says what to do; this says why, for the
+// people who want it, without putting a paragraph in front of everyone else.
+function Info({ title, children, label }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className={label ? "btn" : "infob"}
+        aria-label={label ? undefined : "More about " + title}
+        onClick={() => setOpen(true)}
+      >
+        {label || "i"}
+      </button>
+      {open && (
+        <>
+          <div className="scrim" onClick={() => setOpen(false)} />
+          <div className="modal" role="dialog" aria-modal="true">
+            <div className="modal-head">
+              <div>
+                <span className="wordmark">Clear</span>
+                <h3>{title}</h3>
+              </div>
+              <button className="modal-x" aria-label="Close" onClick={() => setOpen(false)}>
+                {"×"}
+              </button>
+            </div>
+            <div className="about">{children}</div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 function Seg({ options, value, onChange, small, alarm }) {
   return (
     <div className={"seg" + (small ? " sm" : "") + (alarm ? " alarm" : "")}>
@@ -2062,7 +2103,7 @@ function EpisodeHandover({ episodes, days, regimen }) {
       </div>
       {msg && <div className="note" style={{ marginTop: 9 }}>{msg}</div>}
       <div className="note" style={{ marginTop: 10 }}>
-        Written from your log, not generated. Every figure came from an entry you made.
+        Every figure comes from an entry you made.
       </div>
     </div>
   );
@@ -2096,7 +2137,7 @@ function About({ onClose, intro, onAck, onShareBackup, onShareWeek }) {
             <span className="n">2</span>
             <span className="tx">
               <b>Nobody else has a copy</b>
-              Not even whoever made this. Clearing your browser data erases the lot, and it cannot be recovered.
+              Clearing your browser data erases it, and it cannot be recovered.
             </span>
           </div>
           <div className="pt">
@@ -2235,8 +2276,7 @@ function RescuePack({ pack, onChange, onStartCourse }) {
       </div>
       {pack.length === 0 ? (
         <div className="note">
-          Standby antibiotics you keep at home. Worth recording so you are not reading a box label at 6am, and so
-          you know before you need them whether they are still in date.
+          Standby antibiotics you keep at home, with their expiry dates.
         </div>
       ) : (
         pack.map((r) => {
@@ -2365,8 +2405,15 @@ function PlanEditor({ regimen, onChange, onClose }) {
   return (
     <div className="card flat">
       <div className="note" style={{ marginBottom: 12 }}>
-        Set what a full day looks like for you. Doses a day drives the ring. Archiving keeps a treatment in your
-        history but takes it off today's list.
+        Set what a full day looks like for you.
+        <Info title="Your care plan">
+          <p>Doses a day is what the ring counts up to.</p>
+          <p>
+            Archiving a treatment takes it off today's list but keeps it in your history, so past days still show
+            what you were actually doing at the time.
+          </p>
+          <p>Changing the plan only affects days from here on.</p>
+        </Info>
       </div>
       {draft.map((r, i) => (
         <div key={r.id} className="planrow">
@@ -2982,8 +3029,7 @@ function SymptomList({ day, custom, onSet, onAddCustom, onDeleteCustom }) {
       )}
       {!reviewed && (
         <div className="note" style={{ marginTop: 12 }}>
-          Not reviewed yet. Until you touch this list it stays out of the trend charts rather than counting as
-          nine clean zeros.
+          Not reviewed yet, so this day stays out of the trend charts.
         </div>
       )}
     </>
@@ -3436,7 +3482,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           ) : (
             planTotal > 0 && (
               <div className="note" style={{ marginTop: 12 }}>
-                {planTotal} doses make a full day. The plus records an extra session.
+                The plus records an extra session.
               </div>
             )
           )}
@@ -3512,7 +3558,18 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   const symptomSection = (
     <div className="card">
       <div className="card-t">
-        <span>Symptoms</span>
+        <span className="ttl">
+          Symptoms
+          <Info title="Symptoms">
+            <p>Set each one to none, mild, moderate or severe.</p>
+            <p>
+              A day you have not touched is left out of the trend charts rather than counted as a day with nothing
+              wrong. Not filling the list in and having no symptoms are different things, and the charts would
+              otherwise read them the same way.
+            </p>
+            <p>Six of these are the standard exacerbation features, which the app counts for you.</p>
+          </Info>
+        </span>
         <span className="hint">none · mild · moderate · severe</span>
       </div>
       <SymptomList
@@ -3753,7 +3810,17 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   const courseDoseSection = doseTakers.length > 0 && (
     <div className="card">
       <div className="card-t">
-        <span>Medication doses today</span>
+        <span className="ttl">
+          Medication doses today
+          <Info title="Medication doses">
+            <p>Tick off each dose of a course as you take it.</p>
+            <p>
+              These are counted on their own, separately from your daily airway care. Putting them together would
+              change what the care ring has meant on every day you have already logged.
+            </p>
+            <p>When a course finishes it reports how many of its doses you ticked off.</p>
+          </Info>
+        </span>
       </div>
       {doseTakers.map((c) => (
         <div key={c.id}>
@@ -3767,10 +3834,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           {c.note ? <div className="note dosenote">{c.note}</div> : null}
         </div>
       ))}
-      <div className="note" style={{ marginTop: 12 }}>
-        Counted separately from your airway care, so neither total changes what the
-        other one means.
-      </div>
+
     </div>
   );
 
@@ -3925,10 +3989,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         />
       )}
 
-      {isUnwell && (
-        <EpisodeHandover episodes={episodes} days={state.days} regimen={state.regimen} />
-      )}
-
       <EarlyWarning days={state.days} regimen={state.regimen} />
 
       {isUnwell && (state.rescue || []).length > 0 && (
@@ -3960,6 +4020,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           {airSection}
           {tagSection}
           {noteSection}
+          <EpisodeHandover episodes={episodes} days={state.days} regimen={state.regimen} />
         </>
       ) : (
         <>
@@ -3985,10 +4046,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       <div className="savednote no-print">
         <div className="tick">{"✓"}</div>
         <div className="tx">
-          <b>{logged ? "Saved on this device" : "Nothing logged yet"}</b>
-          {logged
-            ? "This entry is already stored. There is no submit step — close the app whenever you like and it will be here."
-            : "Anything you enter saves itself as you go. There is no submit step."}
+          <b>{logged ? "Saved" : "Nothing logged yet"}</b>
+          {logged ? "This day is stored on your device." : "Entries save as you type."}
         </div>
       </div>
 
@@ -4428,8 +4487,7 @@ function TrendsView({ state, episodes }) {
           </div>
         ))}
         <div className="note" style={{ marginTop: 12 }}>
-          Counted over the {adherence.logged} days you actually logged, each against the plan in force that day,
-          so they don't flatter you for days you skipped entirely.
+          Counted over the {adherence.logged} days you logged.
         </div>
       </div>
 
@@ -4468,11 +4526,21 @@ function TrendsView({ state, episodes }) {
 
       {symptomData.length > 1 && (
         <div className="card">
-          <div className="card-t"><span>Most recent episode</span><span className="hint">symptom burden by day</span></div>
-          <MiniChart kind="bar" height={150} color="#2FA5DC" data={symptomData.map((d) => ({ label: d.label, value: d.burden }))} />
-          <div className="note" style={{ marginTop: 8 }}>
-            Burden is the sum of symptom severities that day. It's only comparable within one episode, not across years.
+          <div className="card-t">
+            <span className="ttl">
+              Most recent episode
+              <Info title="Symptom burden">
+                <p>Each bar is that day's symptom scores added together.</p>
+                <p>
+                  It is only comparable inside one episode. Which symptoms you track, and how you rate them, drift
+                  over time, so comparing one year's bars against another's would not mean much.
+                </p>
+              </Info>
+            </span>
+            <span className="hint">symptom burden by day</span>
           </div>
+          <MiniChart kind="bar" height={150} color="#2FA5DC" data={symptomData.map((d) => ({ label: d.label, value: d.burden }))} />
+
         </div>
       )}
     </>
@@ -4752,8 +4820,7 @@ function Snapshots({ onRestore }) {
     <>
       <div className="rowlab">Automatic copies</div>
       <div className="note" style={{ marginBottom: 9 }}>
-        Kept on this device without you doing anything, one per day for the last few days. Useful if something went
-        wrong today. Not a substitute for a backup file, since these disappear with your browser data.
+        One a day, kept on this device. These go when your browser data goes, so they are not a backup.
       </div>
       {snaps.map((sn) => (
         <div className="course" key={sn.key}>
@@ -4822,7 +4889,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQuestions, onRescue, onShareWeek }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5008,7 +5075,6 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
           onAppt={onAppt}
           onQuestions={onQuestions}
         />
-        <RescuePack pack={state.rescue || []} onChange={onRescue} />
       </div>
 
       <div className="card no-print">
@@ -5023,8 +5089,7 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
           <button className="btn" onClick={copy}>Copy as text</button>
         </div>
         <div className="note" style={{ marginTop: 9 }}>
-          Print gives you a clean PDF on desktop. On a phone the print dialog is sometimes unavailable, so use
-          <strong> Copy as text</strong> and paste it into a message or email instead.
+          On a phone, use <strong>Copy as text</strong> if the print dialog does not appear.
         </div>
       </div>
 
@@ -5068,7 +5133,7 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
               </div>
             </div>
             <div className="note" style={{ marginTop: 10 }}>
-              Figures cover logged days only. Unlogged days are excluded rather than assumed well.
+              Logged days only.
             </div>
           </>
         )}
@@ -5149,6 +5214,10 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
         </div>
       ))}
 
+      <div className="no-print">
+        <RescuePack pack={state.rescue || []} onChange={onRescue} />
+      </div>
+
       <div className="card no-print">
         <div className="card-t" id="backup"><span>Backup</span></div>
         <StorageHealth days={Object.keys(state.days).length} />
@@ -5164,25 +5233,45 @@ function ReportView({ state, episodes, onImport, onWipe, onSample, onAppt, onQue
         <input ref={checkRef} type="file" accept="application/json" onChange={checkFile} style={{ display: "none" }} />
         {check && <div className={"insight " + check.cls}>{check.text}</div>}
         <div className="note" style={{ marginTop: 10 }}>
-          <strong>Back up now</strong> opens the share sheet. Save to Files puts it in iCloud Drive; Mail sends it to
-          yourself. <strong>Check a backup file</strong> reads a file and tells you what is in it without changing
-          anything, so you can confirm a backup actually worked.
+          <strong>Back up now</strong> saves a file wherever you choose.{" "}
+          <strong>Check a backup file</strong> tells you what is in one without changing anything.
+        </div>
+        <div className="btnrow" style={{ marginTop: 10 }}>
+          <Info title="Where to keep your backups" label="Where should these go?">
+            <p>
+              A backup is one file. The point is to put it somewhere that is not only this phone, so a lost or wiped
+              device does not take your log with it.
+            </p>
+            <h4>Setting it up, once</h4>
+            <p>
+              <strong>iPhone.</strong> Open the Files app, go to iCloud Drive and make a folder called Clear backups.
+              Come back here, tap Back up now, choose Save to Files, and pick that folder.
+            </p>
+            <p>
+              <strong>Android.</strong> Open Drive and make a folder called Clear backups. Then tap Back up now,
+              choose Drive, and pick it.
+            </p>
+            <h4>Every time after that</h4>
+            <p>Tap Back up now and your phone offers the same place again. Two taps, once a week is plenty.</p>
+            <p>
+              The dot at the top of the screen turns amber after a few days and red after a week, so you do not have
+              to remember on your own.
+            </p>
+            <h4>Getting it back</h4>
+            <p>
+              Restore backup, then pick the newest file. Worth doing once now, while there is nothing to lose, so you
+              know it works.
+            </p>
+            <h4>One thing that is not a backup</h4>
+            <p>
+              Download CSV gives you a spreadsheet for reading your own numbers. It is not something this app can
+              restore from, because it cannot hold your courses, your care plan or its history.
+            </p>
+          </Info>
         </div>
         <Snapshots onRestore={onImport} />
         <div className="divider" />
-        <div className="note" style={{ marginBottom: 10 }}>
-          A sample year fills the log with made-up data so you can see the trends, episodes, milestones and the sky
-          clarity working. It replaces whatever is here, so download a backup first if you have real entries.
-        </div>
         <div className="btnrow">
-          <button
-            className="btn"
-            onClick={() => {
-              if (window.confirm("Replace everything with a made-up sample year?")) onSample();
-            }}
-          >
-            Load a sample year
-          </button>
           <button className="btn danger" onClick={onWipe}>Erase everything</button>
         </div>
       </div>
@@ -5221,6 +5310,18 @@ function App() {
       if (!live) return;
       if (s) setState(s);
       setPersist(ok);
+      // ?sample=1 fills an empty log with a made-up year, for screenshots and for
+      // anyone who wants a look before committing to it. It refuses to run when
+      // there are entries, so a shared link can never overwrite somebody's log.
+      try {
+        const wants = new URLSearchParams(window.location.search).has("sample");
+        if (wants && (!s || !Object.keys(s.days || {}).length)) {
+          setState(sampleYear());
+          // the save effect skips the first change so that merely loading does not
+          // rewrite the file; this is a real change and should be written
+          first.current = false;
+        }
+      } catch (e) {}
       setReady(true);
     });
     return () => { live = false; };
@@ -5912,7 +6013,6 @@ function App() {
             episodes={episodes}
             onImport={(s) => setState(s)}
             onWipe={wipe}
-            onSample={() => setState(sampleYear())}
             onAppt={setAppt}
             onQuestions={setQuestions}
             onRescue={setRescue}

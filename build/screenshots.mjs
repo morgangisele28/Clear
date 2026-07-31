@@ -117,7 +117,7 @@ const server = createServer((req, res) => {
   res.end(readFileSync(file));
 });
 await new Promise((r) => server.listen(PORT, r));
-const BASE = "http://127.0.0.1:" + PORT + "/index.html";
+const BASE = "http://127.0.0.1:" + PORT + "/index.html?sample=1";
 
 /* ------------------------------------------------------------------ */
 /*  Capture                                                            */
@@ -187,14 +187,10 @@ const card = async (needle, file, sel = ".card") => {
   console.log("  captured " + file);
 };
 
+// the sample year comes from ?sample=1 on the URL above; the button that used to
+// load it has no place in an app people keep their own health record in
 await clearOverlays();
-await click("^Report$");
-await page.waitForTimeout(900);
-await click("Load a sample year");
-await page.waitForTimeout(2600);
-await clearOverlays();
-await click("^Log$");
-await page.waitForTimeout(1000);
+await page.waitForTimeout(1200);
 
 // Walk to a day inside the most recent episode, where the cards are actually full.
 const target = await page.evaluate(() => {
