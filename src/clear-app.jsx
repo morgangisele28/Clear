@@ -419,6 +419,18 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .modal .planrow{background:var(--paper);}
 .planrow .inp{background:var(--paper);margin-bottom:7px;}
 .planfoot{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.trackrow{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;
+  padding:12px 2px;text-align:left;}
+.trackrow+.trackrow{box-shadow:inset 0 1px 0 var(--hair-2);}
+.trackrow .tr-tx{flex:1;font-size:14px;color:var(--ink-2);}
+.trackrow .tr-tx b{display:block;font-weight:600;color:var(--ink);font-size:14.5px;letter-spacing:-0.01em;}
+.trackrow .tr-tx small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
+.trackrow .tr-sw{width:44px;height:26px;flex:0 0 auto;border-radius:99px;background:var(--paper-2);
+  position:relative;transition:background .22s var(--ease);}
+.trackrow .tr-sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 3px rgba(8,54,69,.25);transition:transform .22s var(--ease);}
+.trackrow.on .tr-sw{background:var(--accent);}
+.trackrow.on .tr-sw i{transform:translateX(18px);}
 .doserow{display:flex;align-items:center;gap:8px;margin-top:8px;}
 .dosepill{position:relative;flex:1;min-width:0;height:50px;border:none;border-radius:15px;background:var(--paper);
   padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;color:var(--ink);}
@@ -809,6 +821,24 @@ function courseAdherence(course, days) {
   return expected > 0 ? { taken, expected } : null;
 }
 
+// Not everyone owns a peak flow meter or an oximeter, and a box you can never fill is
+// worse than no box. Defaults are on, so nothing changes for a log that already exists.
+// Turning one off hides its field and stops it prompting, and never touches anything
+// already recorded.
+const TRACKABLE = [
+  { key: "peakFlow", label: "Peak flow", note: "Needs a peak flow meter" },
+  { key: "spo2", label: "Oxygen saturation", note: "Needs a pulse oximeter" },
+  { key: "temp", label: "Temperature", note: "Needs a thermometer" },
+  { key: "restHr", label: "Resting heart rate", note: "From a watch, or counted" },
+  { key: "aqi", label: "Air quality", note: "Looked up for where you are" },
+  { key: "culture", label: "Sputum cultures", note: "Samples you send off" },
+];
+const defaultTracking = () => {
+  const t = {};
+  TRACKABLE.forEach((x) => (t[x.key] = true));
+  return t;
+};
+
 const SEED_TAGS = ["Household illness", "Travel or flight", "Poor sleep", "Air quality", "Saw the doctor", "Missed airway care"];
 const SEED_PRN = [];
 const ORGANISMS = ["", "No growth", "Pseudomonas aeruginosa", "Haemophilus influenzae", "Streptococcus pneumoniae", "Staphylococcus aureus", "Moraxella catarrhalis", "Non-tuberculous mycobacteria", "Aspergillus", "Mixed flora", "Result pending", "Other"];
@@ -834,7 +864,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.7";
+const BUILD = "2.8";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -891,7 +921,7 @@ const emptyDay = () => ({
   notes: "",
 });
 
-const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], meta: {} });
+const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), meta: {} });
 
 function migrate(raw) {
   const fromVersion = (raw && raw.v) || 1;
@@ -906,6 +936,7 @@ function migrate(raw) {
   s.regimen = s.regimen || [];
   s.rescue = s.rescue || [];
   s.appt = s.appt || { date: "", who: "" };
+  s.track = { ...defaultTracking(), ...(s.track || {}) };
   s.questions = s.questions || [...SEED_QUESTIONS];
   Object.keys(s.days).forEach((k) => {
     s.days[k] = { ...emptyDay(), ...s.days[k] };
@@ -1972,6 +2003,37 @@ function Setup({ regimen, onChange, onClose }) {
         </div>
       </div>
     </>
+  );
+}
+
+function TrackSettings({ track, onChange }) {
+  const on = (k) => track[k] !== false;
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span>What you track</span>
+      </div>
+      <div className="note" style={{ marginBottom: 12 }}>
+        Turn off anything you do not measure. It hides the field and stops the reminders.
+        Nothing you have already recorded is removed.
+      </div>
+      {TRACKABLE.map((t) => (
+        <button
+          key={t.key}
+          className={"trackrow" + (on(t.key) ? " on" : "")}
+          aria-pressed={on(t.key)}
+          onClick={() => onChange({ ...track, [t.key]: !on(t.key) })}
+        >
+          <span className="tr-tx">
+            <b>{t.label}</b>
+            <small>{t.note}</small>
+          </span>
+          <span className="tr-sw" aria-hidden="true">
+            <i />
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -3602,6 +3664,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   );
 
   const careDone = doseCount(day, state.regimen);
+  const tracks = (k) => (state.track || {})[k] !== false;
+  const anyVital = ["peakFlow", "spo2", "temp", "restHr"].some(tracks);
   // what is left of the plan today, by name, for the prompt at the foot of the page
   const careLeft = todayPlan
     .map((r) => ({ name: r.name, left: Math.max(0, r.target - (day.care[r.id] || 0)) }))
@@ -3921,38 +3985,48 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   const detailSection = (
     <>
+      {anyVital && (
       <div className="card">
         <div className="card-t">
           <span>Measurements</span>
           <span className="hint">blank if not taken</span>
         </div>
         <div className="vitals">
-          <div className="vit">
-            <label>Peak flow L/min</label>
-            <input type="number" inputMode="numeric" placeholder="—" value={day.peakFlow}
-              onChange={(e) => up({ peakFlow: e.target.value })} />
-          </div>
-          <div className="vit">
-            <label>SpO₂ %</label>
-            <input type="number" inputMode="numeric" placeholder="—" value={day.spo2}
-              onChange={(e) => up({ spo2: e.target.value })} />
-          </div>
-          <div className="vit">
-            <label>Temp °C</label>
-            <input type="number" inputMode="decimal" step="0.1" placeholder="—" value={day.temp}
-              onChange={(e) => up({ temp: e.target.value })} />
-          </div>
-          <div className="vit">
-            <label>Resting HR</label>
-            <input type="number" inputMode="numeric" placeholder="—" value={day.restHr}
-              onChange={(e) => up({ restHr: e.target.value })} />
-          </div>
+          {tracks("peakFlow") && (
+            <div className="vit">
+              <label>Peak flow L/min</label>
+              <input type="number" inputMode="numeric" placeholder="—" value={day.peakFlow}
+                onChange={(e) => up({ peakFlow: e.target.value })} />
+            </div>
+          )}
+          {tracks("spo2") && (
+            <div className="vit">
+              <label>SpO₂ %</label>
+              <input type="number" inputMode="numeric" placeholder="—" value={day.spo2}
+                onChange={(e) => up({ spo2: e.target.value })} />
+            </div>
+          )}
+          {tracks("temp") && (
+            <div className="vit">
+              <label>Temp °C</label>
+              <input type="number" inputMode="decimal" step="0.1" placeholder="—" value={day.temp}
+                onChange={(e) => up({ temp: e.target.value })} />
+            </div>
+          )}
+          {tracks("restHr") && (
+            <div className="vit">
+              <label>Resting HR</label>
+              <input type="number" inputMode="numeric" placeholder="—" value={day.restHr}
+                onChange={(e) => up({ restHr: e.target.value })} />
+            </div>
+          )}
         </div>
         <OtherInsights day={day} days={state.days} date={date} />
-        {date !== todayISO() && day.peakFlow !== "" && (
+        {tracks("peakFlow") && date !== todayISO() && day.peakFlow !== "" && (
           <PeakFlowInsight days={state.days} date={date} value={day.peakFlow} />
         )}
       </div>
+      )}
 
       <div className="card">
         <div className="card-t">
@@ -4235,7 +4309,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         </div>
       )}
 
-      {pfDue && (
+      {pfDue && tracks("peakFlow") && (
         <PeakFlowReminder
           lastPF={lastPF}
           date={date}
@@ -4270,8 +4344,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           {sputumSection}
           {symptomSection}
           {detailSection}
-          {cultureSection}
-          {airSection}
+          {tracks("culture") && cultureSection}
+          {tracks("aqi") && airSection}
           {tagSection}
           {noteSection}
           <EpisodeHandover episodes={episodes} days={state.days} regimen={state.regimen} />
@@ -4280,7 +4354,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         <>
           {careSection}
           {sputumSection}
-          {airSection}
+          {tracks("aqi") && airSection}
           {tagSection}
           {showDetail ? (
             detailSection
@@ -5165,7 +5239,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5495,6 +5569,11 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
           </details>
         </div>
       ))}
+
+      <div className="sectionhead no-print">Settings</div>
+      <div className="no-print">
+        <TrackSettings track={state.track || {}} onChange={onTrack} />
+      </div>
 
       <div className="sectionhead no-print">Keeping it safe</div>
       <div className="no-print">
@@ -5960,6 +6039,10 @@ function App() {
     setState((s) => ({ ...s, regimen: r }));
   }, []);
 
+  const setTrack = useCallback((t) => {
+    setState((s) => ({ ...s, track: t }));
+  }, []);
+
   const addPrnMed = useCallback((n) => {
     setState((s) =>
       (s.prnMeds || []).includes(n) ? s : { ...s, prnMeds: [...(s.prnMeds || []), n] }
@@ -6315,6 +6398,7 @@ function App() {
             onAppt={setAppt}
             onQuestions={setQuestions}
             onRescue={setRescue}
+            onTrack={setTrack}
             onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
           />
         )}
