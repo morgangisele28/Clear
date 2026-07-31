@@ -457,9 +457,24 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
   background:#fff;box-shadow:0 1px 3px rgba(8,54,69,.25);transition:transform .22s var(--ease);}
 .trackrow.on .tr-sw{background:var(--accent);}
 .trackrow.on .tr-sw i{transform:translateX(18px);}
-.doserow{display:flex;align-items:center;gap:8px;margin-top:9px;}
-.dosepill{position:relative;flex:1;min-width:0;height:50px;border:none;border-radius:15px;background:var(--paper);
+.doserow{display:flex;align-items:center;gap:7px;margin-top:9px;}
+.dosepill{position:relative;flex:1;min-width:0;height:50px;border-radius:15px;background:var(--paper);
   padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;color:var(--ink);}
+/* the segments are the buttons; the label and the count are painted underneath
+   them and must not swallow the tap that was aimed at a segment */
+.dosepill .lbl,.dosepill .val,.dosefill{pointer-events:none;}
+.segs{position:absolute;inset:0;display:flex;}
+.seg{flex:1;border:none;background:transparent;padding:0;border-right:1px solid rgba(8,54,69,.13);
+  -webkit-tap-highlight-color:transparent;}
+.seg:last-child{border-right:none;}
+.seg:active{background:rgba(8,54,69,.06);}
+/* only rendered on a finished treatment, so it never competes with the bar for
+   what the tap means while there are still doses to fill */
+.xbtn{width:40px;height:50px;flex:0 0 auto;border:none;border-radius:14px;background:var(--paper);
+  color:var(--faint);font-family:var(--display);font-size:14px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;padding:0;}
+.xbtn.on{background:var(--sky-3);color:var(--sky-1);}
+.xbtn:disabled{opacity:.35;}
 .dosefill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);
   transition:width .5s var(--ease),background .4s var(--ease);}
 .dosepill.full .dosefill{background:var(--lime);}
@@ -468,14 +483,8 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .dosepill .val{position:relative;font-family:var(--display);font-size:12px;font-weight:600;color:var(--muted);
   white-space:nowrap;letter-spacing:0.01em;}
 .dosepill.full .val{color:#083645;}
-.dosepill .ticks{position:absolute;inset:0;display:flex;pointer-events:none;}
-.dosepill .ticks i{flex:1;border-right:1px solid rgba(255,255,255,.85);}
-.dosepill .ticks i:last-child{border-right:none;}
 /* extras read as a deliberate overshoot rather than as a fuller kind of done */
 .dosepill.over .dosefill{background:var(--sky-3);}
-.undorow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;
-  padding:9px 6px 9px 14px;border-radius:14px;background:var(--paper);
-  font-size:12.5px;color:var(--muted);animation:rise .28s var(--ease) both;}
 .careweek{display:flex;align-items:center;gap:4px;}
 .cw{width:9px;height:9px;border-radius:3px;background:var(--paper-2);}
 .cw.part{background:#A8CEDE;}
@@ -565,6 +574,11 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .empty strong{display:block;font-family:var(--display);color:var(--ink);font-size:19px;font-weight:600;margin-bottom:9px;letter-spacing:-0.015em;line-height:1.25;}
 .divider{height:1px;background:var(--hair-2);margin:20px 0;}
 .banner{background:#FDF5E7;border-radius:14px;padding:13px 15px;font-size:12.5px;margin-top:14px;line-height:1.55;color:#77571A;}
+/* room for the close, so the last line of text does not run under it */
+.hasx{position:relative;padding-right:40px;}
+.calloutx{position:absolute;top:7px;right:7px;width:26px;height:26px;border:none;border-radius:50%;
+  background:rgba(8,54,69,.06);color:inherit;opacity:.6;font-size:14px;line-height:1;
+  display:flex;align-items:center;justify-content:center;padding:0;}
 .banner.red{background:var(--alarm-soft);color:var(--alarm);}
 .handover{background:var(--paper);border-radius:14px;padding:15px 16px;font-size:13px;line-height:1.65;
   color:var(--ink-2);white-space:pre-wrap;user-select:text;-webkit-user-select:text;}
@@ -590,6 +604,8 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .remind input{width:78px;flex:0 0 auto;border:none;background:var(--paper);border-radius:12px;padding:9px 6px;
   font-family:var(--display);font-size:17px;font-weight:500;text-align:center;color:var(--ink);outline:none;letter-spacing:-0.01em;}
 .remind input::placeholder{color:#BCC7D1;font-size:12.5px;font-family:var(--body);letter-spacing:0;}
+.remx{width:30px;height:30px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
+  color:var(--faint);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
 .remind .ok{width:38px;height:38px;flex:0 0 auto;border:none;border-radius:12px;background:var(--accent);color:#fff;
   font-size:14px;display:flex;align-items:center;justify-content:center;padding:0;}
 .remind .ok:disabled{background:var(--paper-2);color:#B6C2CE;}
@@ -959,7 +975,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.5";
+const BUILD = "3.6";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -2802,6 +2818,23 @@ function Gear() {
 // signals were showing and how serious each one was — so a new signal, or an
 // existing one stepping up from a note to a watch, brings the card straight back.
 // Only the exact set you actually read stays hidden.
+// A coloured callout with a close on it. What is remembered is not "this was
+// closed" but the state it was in when you closed it — so the same wording on
+// the same day stays gone, while a worse count, a deeper shift, or simply
+// tomorrow brings it back. Closing one of these is acknowledging what it says,
+// not switching it off.
+function Callout({ id, sig, noted, onNote, cls, children }) {
+  if ((noted || {})[id] === sig) return null;
+  return (
+    <div className={cls + " hasx"}>
+      {children}
+      <button className="calloutx" onClick={() => onNote(id, sig)} aria-label="Dismiss">
+        {"×"}
+      </button>
+    </div>
+  );
+}
+
 // A card heading you can roll up. The open state is remembered per section, so
 // somebody who never fills symptoms in is not reopening the same list every day.
 // Until it has been touched the fallback decides, and every fallback errs open
@@ -3101,37 +3134,65 @@ function PlanEditor({ regimen, onChange, onClose }) {
   );
 }
 
-// One control, not two. A tap fills the next dose; once the bar is full another
-// tap starts counting extra sessions rather than wrapping back to nothing, which
-// is what made a single over-tap so awkward to walk back. Undoing is not a
-// gesture on this pill — it is the Undo that appears on the card after any tap,
-// because a hidden gesture is exactly what was missing before.
+// The bar is the control, read like a star rating: each dose in the plan is its
+// own segment, and tapping one says "I have done this many". That makes every
+// value reachable in a single tap in both directions, including back to nothing,
+// so there is no cycling round to correct an over-tap and nothing transient to
+// catch. Tapping the segment you are already on steps back off it.
+//
+// Extras sit underneath and only once the plan is finished, because an extra
+// session is only meaningful against a full day. Keeping them off the bar is
+// what lets the bar mean exactly one thing.
 function DosePill({ label, count, target, onSet, valueText, allowExtra = true }) {
   const capped = Math.min(count, target);
   const extra = Math.max(0, count - target);
   const full = capped >= target;
   const pct = (capped / target) * 100;
-  // extras stop somewhere: past this it is a mis-tap, not a session
-  const next = full && (!allowExtra || extra >= 9) ? count : count + 1;
   const say = valueText || (full ? (extra ? `Done +${extra}` : "Done") : `${capped} of ${target}`);
+  // dropping below the plan drops the extras with it: an extra dose on a day you
+  // did not finish is not a thing the log should be able to hold
+  const setTo = (n) => onSet(n >= target ? target + extra : n);
   return (
     <div className="doserow">
-      <button
-        className={"dosepill" + (full ? " full" : "") + (extra ? " over" : "")}
-        onClick={() => next !== count && onSet(next)}
-        aria-label={`${label}, ${capped} of ${target}${extra ? `, ${extra} extra` : ""}`}
-      >
+      <div className={"dosepill" + (full ? " full" : "") + (extra ? " over" : "")}>
         <span className="dosefill" style={{ width: pct + "%" }} />
-        {target > 1 && (
-          <span className="ticks">
-            {Array.from({ length: target }).map((_, i) => (
-              <i key={i} />
-            ))}
-          </span>
-        )}
         <span className="lbl">{label}</span>
         <span className="val">{say}</span>
-      </button>
+        <span className="segs">
+          {Array.from({ length: target }).map((_, i) => {
+            const to = i + 1 === capped ? i : i + 1;
+            return (
+              <button
+                key={i}
+                className={"seg" + (i < capped ? " on" : "")}
+                onClick={() => setTo(to)}
+                aria-label={`${label}, set to ${to} of ${target}`}
+              />
+            );
+          })}
+        </span>
+      </div>
+      {/* Beside the bar rather than under it, and only once this treatment is
+          finished. A row of text links under every completed pill was four lines
+          of clutter every evening to serve something used once in a while. */}
+      {allowExtra && full && (
+        <>
+          {extra > 0 && (
+            <button className="xbtn" onClick={() => onSet(count - 1)} aria-label={`One less extra ${label}`}>
+              {"\u2212"}
+            </button>
+          )}
+          <button
+            className={"xbtn" + (extra ? " on" : "")}
+            onClick={() => extra < 9 && onSet(count + 1)}
+            disabled={extra >= 9}
+            aria-label={extra ? `${extra} extra, add another` : `Record an extra ${label} session`}
+            title="Extra session"
+          >
+            {extra ? "+" + extra : "+"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -3341,7 +3402,7 @@ function Slider({ label, value, max, valueLabel, hint, track, thumb, onChange })
   );
 }
 
-function SputumPanel({ day, onChange, history }) {
+function SputumPanel({ day, onChange, history, date, noted, onNote }) {
   const { color, volume, texture } = day.sputum;
   const recorded = color != null;
   const c = color ?? 0;
@@ -3401,15 +3462,26 @@ function SputumPanel({ day, onChange, history }) {
           )}
       </div>
 
-      {shift != null && (
-        <div className={"delta " + (shift >= 2 ? "up" : shift <= -2 ? "down" : "flat")}>
-          {shift >= 2
-            ? `More purulent than your recent baseline, by ${shift} steps on the scale. A sustained shift like this is the usual signal to call your team.`
-            : shift <= -2
-            ? `Clearing. ${Math.abs(shift)} steps paler than your recent baseline.`
-            : "In line with your recent baseline."}
-        </div>
-      )}
+      {shift != null &&
+        (shift >= 2 ? (
+          // only the warning gets a close; "clearing" and "in line" are not things
+          // anyone needs to dismiss, and giving them one would be noise
+          <Callout
+            id="sputum-shift"
+            sig={date + ":" + shift}
+            noted={noted}
+            onNote={onNote}
+            cls="delta up"
+          >
+            {`More purulent than your recent baseline, by ${shift} steps on the scale. A sustained shift like this is the usual signal to call your team.`}
+          </Callout>
+        ) : (
+          <div className={"delta " + (shift <= -2 ? "down" : "flat")}>
+            {shift <= -2
+              ? `Clearing. ${Math.abs(shift)} steps paler than your recent baseline.`
+              : "In line with your recent baseline."}
+          </div>
+        ))}
     </>
   );
 }
@@ -4049,7 +4121,7 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning, onFold }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning, onFold, onNote }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
@@ -4067,23 +4139,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
   };
   const setFold = (id, open) => onFold(id, open);
 
-  // The last dose tapped, so it can be put back. Deliberately not a gesture: not
-  // knowing how to undo was the complaint, and a swipe would only move the
-  // problem. It clears itself, so the card is not carrying a stale offer.
-  const [undo, setUndo] = useState(null);
-  useEffect(() => {
-    if (!undo) return;
-    const t = setTimeout(() => setUndo(null), 7000);
-    return () => clearTimeout(t);
-  }, [undo]);
-  // a new day is a new context; an Undo left over from yesterday would put a dose
-  // back on a card you are no longer looking at
-  useEffect(() => setUndo(null), [date]);
-  // wraps a dose setter so every tap leaves a way back to the count before it
-  const withUndo = (label, prev, set) => (n) => {
-    setUndo({ label, back: () => set(prev) });
-    set(n);
-  };
 
   const [showCourse, setShowCourse] = useState(false);
   const [editCourseId, setEditCourseId] = useState(null);
@@ -4225,7 +4280,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
               label={r.name}
               target={r.target}
               count={day.care[r.id] || 0}
-              onSet={withUndo(r.name, day.care[r.id] || 0, (n) => setCare(r.id, n))}
+              onSet={(n) => setCare(r.id, n)}
             />
           ))}
           {careDone >= planTotal && planTotal > 0 ? (
@@ -4236,25 +4291,12 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           ) : (
             planTotal > 0 && (
               <div className="note" style={{ marginTop: 12 }}>
-                Tap to fill a dose. Tap a full one again to record an extra session.
+                Tap along the bar to set how many doses you have done. Tap where you are to take one back. A
+                finished treatment gets a + beside it for an extra session.
               </div>
             )
           )}
 
-          {undo && (
-            <div className="undorow">
-              <span>{undo.label} changed</span>
-              <button
-                className="btn sm"
-                onClick={() => {
-                  undo.back();
-                  setUndo(null);
-                }}
-              >
-                Undo
-              </button>
-            </div>
-          )}
 
           {/* Pausing sets the same active flag the plan editor uses, so a paused
               treatment drops out of today's target instead of counting against you,
@@ -4315,9 +4357,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                     label={c.drug}
                     target={c.freq}
                     count={(day.courseDoses || {})[c.id] || 0}
-                    onSet={withUndo(c.drug, (day.courseDoses || {})[c.id] || 0, (n) =>
-                      setCourseDose(date, c.id, n)
-                    )}
+                    onSet={(n) => setCourseDose(date, c.id, n)}
                     allowExtra={false}
                   />
                   {c.note ? <div className="note dosenote">{c.note}</div> : null}
@@ -4355,7 +4395,14 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         <span>Sputum</span>
         <span className="hint">drag to match</span>
       </div>
-      <SputumPanel day={day} history={sputumHistory} onChange={(sp) => up({ sputum: sp })} />
+      <SputumPanel
+        day={day}
+        history={sputumHistory}
+        date={date}
+        noted={state.noted}
+        onNote={onNote}
+        onChange={(sp) => up({ sputum: sp })}
+      />
 
       {sputumRecorded && (
         <>
@@ -4425,20 +4472,31 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       </Fold>
       {/* the exacerbation count sits outside the fold on purpose: it is the one
           thing on this card you must not be able to roll away out of sight */}
-      {rules.filter((r) => r.met).map((r) =>
-        r.key === "copd" ? (
-          <div className="banner" key={r.key}>
-            {r.n} of the 3 COPD exacerbation criteria are present today ({r.list.join(", ")}). Two or more is the
-            usual threshold for ringing your team. This counts what you logged. It is not a diagnosis.
-          </div>
-        ) : (
-          <div className="banner" key={r.key}>
-            {r.n} of the 6 standard exacerbation features are present today ({r.list.join(", ")}). Three or more
-            sustained over 48 hours is the usual threshold for ringing your team rather than waiting it out. This
-            counts what you logged. It is not a diagnosis.
-          </div>
-        )
-      )}
+      {rules.filter((r) => r.met).map((r) => (
+        // keyed on the day and the count, so closing it acknowledges today at this
+        // many features; one more feature, or tomorrow, and it is back
+        <Callout
+          key={r.key}
+          id={"exac-" + r.key}
+          sig={date + ":" + r.n}
+          noted={state.noted}
+          onNote={onNote}
+          cls="banner"
+        >
+          {r.key === "copd" ? (
+            <>
+              {r.n} of the 3 COPD exacerbation criteria are present today ({r.list.join(", ")}). Two or more is the
+              usual threshold for ringing your team. This counts what you logged. It is not a diagnosis.
+            </>
+          ) : (
+            <>
+              {r.n} of the 6 standard exacerbation features are present today ({r.list.join(", ")}). Three or more
+              sustained over 48 hours is the usual threshold for ringing your team rather than waiting it out. This
+              counts what you logged. It is not a diagnosis.
+            </>
+          )}
+        </Callout>
+      ))}
       {(state.conditions || []).indexOf("cf") !== -1 && (
         <div className="note" style={{ marginTop: 10 }}>
           Cystic fibrosis exacerbations are judged on more than symptoms — lung function, weight and
@@ -4830,15 +4888,21 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         </div>
       )}
 
-      {apptSoon && (
+      {apptSoon && (state.noted || {})["appt"] !== state.appt.date && (
         <div className="remind">
           <span className="txt">
-            {state.appt.who ? state.appt.who : "Appointment"} in {apptDays} day{apptDays === 1 ? "" : "s"}
+            {state.appt.who ? state.appt.who : "Appointment"}{" "}
+            {apptDays === 0 ? "today" : apptDays === 1 ? "tomorrow" : `in ${apptDays} days`}
             <small>
               {openQuestions ? `${openQuestions} thing${openQuestions === 1 ? "" : "s"} on your list` : "nothing on your list yet"}
             </small>
           </span>
           <button className="btn sm" onClick={() => setTab("report")}>Open</button>
+          {/* keyed to the appointment date, so closing this one does not silence
+              the next appointment you book */}
+          <button className="remx" onClick={() => onNote("appt", state.appt.date)} aria-label="Dismiss">
+            {"×"}
+          </button>
         </div>
       )}
 
@@ -6607,6 +6671,12 @@ function App() {
     []
   );
 
+  // what has been acknowledged, and in what state — see Callout
+  const setNoted = useCallback(
+    (id, sig) => setState((s) => ({ ...s, noted: { ...(s.noted || {}), [id]: sig } })),
+    []
+  );
+
   const setRescue = useCallback((r) => setState((s) => ({ ...s, rescue: r })), []);
   const setAppt = useCallback((a) => setState((s) => ({ ...s, appt: a })), []);
   const setQuestions = useCallback((q) => setState((s) => ({ ...s, questions: q })), []);
@@ -6968,6 +7038,7 @@ function App() {
             setQuestions={setQuestions}
             onDismissWarning={dismissWarning}
             onFold={setFoldOpen}
+            onNote={setNoted}
             addCustomDrug={addCustomDrug}
             setCourseOutcome={setCourseOutcome}
             setCourseNote={setCourseNote}
