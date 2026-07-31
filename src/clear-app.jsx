@@ -864,7 +864,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.9";
+const BUILD = "3.0";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -921,7 +921,7 @@ const emptyDay = () => ({
   notes: "",
 });
 
-const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), meta: {} });
+const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), remindTimes: [], meta: {} });
 
 function migrate(raw) {
   const fromVersion = (raw && raw.v) || 1;
@@ -937,6 +937,7 @@ function migrate(raw) {
   s.rescue = s.rescue || [];
   s.appt = s.appt || { date: "", who: "" };
   s.track = { ...defaultTracking(), ...(s.track || {}) };
+  s.remindTimes = s.remindTimes || [];
   s.questions = s.questions || [...SEED_QUESTIONS];
   Object.keys(s.days).forEach((k) => {
     s.days[k] = { ...emptyDay(), ...s.days[k] };
@@ -1306,6 +1307,49 @@ function careRun(days, regimen) {
   let done = 0;
   for (let i = 0; i < 14; i++) if (careComplete(days[addDays(today, -i)], regimen)) done++;
   return { current, best, rate: done / 14, hasPlan: true };
+}
+
+// A recurring calendar entry rather than a push notification. Real web push needs a
+// server holding a subscription for every user and a push service to relay through,
+// which is a promise this app has spent its whole existence not making. A calendar
+// alarm fires on time, works offline, works on iOS, survives the app being closed,
+// and belongs to the person rather than to us. DTSTART carries no timezone and no Z,
+// which makes it a floating local time: 8am stays 8am wherever you are.
+function reminderIcs(times, label) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const now = new Date();
+  const stamp =
+    now.getUTCFullYear() +
+    pad(now.getUTCMonth() + 1) +
+    pad(now.getUTCDate()) +
+    "T" +
+    pad(now.getUTCHours()) +
+    pad(now.getUTCMinutes()) +
+    pad(now.getUTCSeconds()) +
+    "Z";
+  const day = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate());
+  const out = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Clear//clearlungs.app//EN", "CALSCALE:GREGORIAN"];
+  times.forEach((t, i) => {
+    const [h, m] = String(t).split(":");
+    out.push(
+      "BEGIN:VEVENT",
+      "UID:clear-" + i + "-" + stamp + "@clearlungs.app",
+      "DTSTAMP:" + stamp,
+      "DTSTART:" + day + "T" + pad(h) + pad(m) + "00",
+      "DURATION:PT15M",
+      "RRULE:FREQ=DAILY",
+      "SUMMARY:" + label,
+      "DESCRIPTION:Open Clear to tick it off. https://clearlungs.app",
+      "BEGIN:VALARM",
+      "TRIGGER:PT0M",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:" + label,
+      "END:VALARM",
+      "END:VEVENT"
+    );
+  });
+  out.push("END:VCALENDAR");
+  return out.join("\r\n");
 }
 
 const MILESTONES = [30, 60, 90, 180, 270, 365];
@@ -2025,6 +2069,55 @@ function Setup({ regimen, track, onChange, onTrack, onClose }) {
         )}
       </div>
     </>
+  );
+}
+
+function Reminders({ times, onChange, onAdd }) {
+  const set = (i, v) => onChange(times.map((t, k) => (k === i ? v : t)));
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span>Daily reminders</span>
+      </div>
+      <div className="note" style={{ marginBottom: 12 }}>
+        Set the times you mean to do your care, and put them in your phone's calendar. It
+        will remind you whether or not the app is open.
+      </div>
+      {times.map((t, i) => (
+        <div className="chipwrap" key={i} style={{ marginTop: i ? 8 : 0 }}>
+          <input className="inp" type="time" value={t} onChange={(e) => set(i, e.target.value)} />
+          <button className="btn" onClick={() => onChange(times.filter((_, k) => k !== i))}>
+            Remove
+          </button>
+        </div>
+      ))}
+      <div className="chips" style={{ marginTop: times.length ? 12 : 0 }}>
+        <button className="chip add" onClick={() => onChange([...times, times.length ? "20:00" : "08:00"])}>
+          {times.length ? "+ Another time" : "+ Add a time"}
+        </button>
+      </div>
+      {times.length > 0 && (
+        <button className="btn pri wide" style={{ marginTop: 14 }} onClick={onAdd}>
+          Add {times.length === 1 ? "this" : "these"} to my calendar
+        </button>
+      )}
+      <Info title="Why the calendar" label="Why not a notification?">
+        <p>
+          A notification that arrives while the app is shut has to be sent from somewhere. That
+          means a server holding a subscription for every person using this, which is the one
+          thing this app has never done and is not going to start doing for a reminder.
+        </p>
+        <p>
+          A calendar entry does the same job without any of that. It fires at the right time,
+          it works with the app closed and with no signal, and it is yours — you can move it,
+          silence it or delete it in your own calendar, without asking us.
+        </p>
+        <p>
+          It repeats daily from today. Adding it again later replaces nothing, so delete the old
+          entry in your calendar if you change the time.
+        </p>
+      </Info>
+    </div>
   );
 }
 
@@ -5264,7 +5357,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5597,6 +5690,28 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
 
       <div className="sectionhead no-print">Settings</div>
       <div className="no-print">
+        <Reminders
+          times={state.remindTimes || []}
+          onChange={onRemind}
+          onAdd={async () => {
+            const times = state.remindTimes || [];
+            if (!times.length) return;
+            const ics = reminderIcs(times, "Airway care");
+            const name = "clear-reminders.ics";
+            try {
+              const file = new File([ics], name, { type: "text/calendar" });
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: "Clear reminders" });
+                setToast("Added");
+                setTimeout(() => setToast(""), 1800);
+                return;
+              }
+            } catch (e) {
+              if (e && e.name === "AbortError") return;
+            }
+            download(name, ics, "text/calendar");
+          }}
+        />
         <TrackSettings track={state.track || {}} onChange={onTrack} />
       </div>
 
@@ -6068,6 +6183,10 @@ function App() {
     setState((s) => ({ ...s, track: t }));
   }, []);
 
+  const setRemind = useCallback((t) => {
+    setState((s) => ({ ...s, remindTimes: t }));
+  }, []);
+
   const addPrnMed = useCallback((n) => {
     setState((s) =>
       (s.prnMeds || []).includes(n) ? s : { ...s, prnMeds: [...(s.prnMeds || []), n] }
@@ -6424,6 +6543,7 @@ function App() {
             onQuestions={setQuestions}
             onRescue={setRescue}
             onTrack={setTrack}
+            onRemind={setRemind}
             onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
           />
         )}
