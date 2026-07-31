@@ -51,9 +51,9 @@ const PANELS = [
   {
     file: "clear-store-03-doses",
     eyebrow: "While you are on a course",
-    head: "Tick off\nevery dose",
-    sub: "Antibiotics get their own count, kept separate from your daily care so neither number changes what the other one means. Finished courses report what you actually took.",
-    imgs: ["doses.png", "courses.png"],
+    head: "Antibiotics,\nrecorded properly",
+    sub: "Dose, how often, and any special instruction. Tick each one off in your care card as you take it, and a finished course reports how many you actually managed.",
+    imgs: ["courses.png"],
   },
   {
     file: "clear-store-04-sputum",
@@ -254,8 +254,7 @@ await page.waitForTimeout(500);
 await page.locator(".sky").first().screenshot({ path: join(CARDS, "hero.png") });
 console.log("  captured hero");
 
-await card("Daily airway care", "care");
-await card("Medication doses today", "doses");
+await card("Today's care", "care");
 await card("Medication courses", "courses");
 await card("Sputum", "sputum");
 await card("Symptoms", "symptoms");
