@@ -113,7 +113,7 @@ const CSS = `
 .eyebrow{font-family:var(--body);font-size:9.5px;font-weight:600;letter-spacing:0.17em;text-transform:uppercase;}
 
 /* ---------- sky ---------- */
-.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 44px;
+.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 30px;
   background:linear-gradient(176deg,#0A5F97 0%,var(--sky-1) 32%,#1793CE 64%,var(--sky-2) 86%,var(--sky-3) 95%,var(--canvas) 100%);}
 .sky::before{content:"";position:absolute;top:-170px;right:-130px;width:400px;height:400px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,calc(.20 + var(--clarity,0) * .34)) 0%,
@@ -316,12 +316,20 @@ const CSS = `
 /* ---------- sections ---------- */
 .card{background:#fff;border:none;border-radius:22px;padding:18px;margin-top:12px;box-shadow:var(--float);}
 .card-t{margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.card-t.foldy{cursor:pointer;list-style:none;margin-bottom:0;}
+.card-t.foldy::-webkit-details-marker{display:none;}
+details[open] .card-t.foldy{margin-bottom:14px;}
+.sectionhead{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--faint);margin:26px 4px 2px;}
 .infob{width:19px;height:19px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
   background:var(--paper-2);color:var(--muted);font-family:var(--display);font-size:11px;
   font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;
   vertical-align:middle;margin-left:7px;}
 .card-t .ttl{display:flex;align-items:center;min-width:0;}
-.card-t>span:first-child{font-size:12.5px;font-weight:500;letter-spacing:0;color:var(--muted);line-height:1.4;}
+/* every card heading was the same small grey text, so eight identical white boxes read
+   as one undifferentiated block. The display face does the separating instead. */
+.card-t>span:first-child,.card-t .ttl{font-family:var(--display);font-size:19px;font-weight:600;
+  letter-spacing:-0.022em;color:var(--ink);line-height:1.15;}
 .card-t .hint{font-weight:400;font-size:11px;color:var(--faint);text-align:right;}
 .card.flat{background:var(--paper);border-radius:14px;padding:15px;margin-top:14px;box-shadow:none;}
 
@@ -823,7 +831,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.5";
+const BUILD = "2.6";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -3401,14 +3409,17 @@ function statusLine(episodes, days, date) {
   return null;
 }
 
-function Hero({ episodes, days, date, run, regimen }) {
+// `compact` is the daily screen: the ring stays, because today's doses are the thing
+// you can still act on, and the run of clear days moves to History where the slower
+// numbers live. It was taking the space the day's actual work needed.
+function Hero({ episodes, days, date, run, regimen, compact }) {
   const n = doseCount(days[date], regimen);
   const total = Math.max(doseTotal(planOf(days[date], regimen)), 1);
   const st = statusLine(episodes, days, date);
   const pct = Math.min((run.current / run.target) * 100, 100);
   return (
     <div className="ringwrap">
-      <CareRing n={n} total={total} />
+      <CareRing n={n} total={total} size={compact ? 156 : 196} />
       <div className="ring-cap">
         {st ? (
           <>
@@ -3418,7 +3429,7 @@ function Hero({ episodes, days, date, run, regimen }) {
           "Mark today well or unwell to start tracking episodes"
         )}
       </div>
-      {run.current > 0 && (
+      {!compact && run.current > 0 && (
         <div className="run">
           <div className={"run-bar" + (run.isBest ? " best" : "")}>
             <span style={{ width: pct + "%" }} />
@@ -4169,19 +4180,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             </small>
           </span>
           <button className="btn sm" onClick={() => setTab("report")}>Open</button>
-        </div>
-      )}
-
-      {backupDue && (
-        <div className="remind">
-          <span className="txt">
-            Back up your log
-            <small>{backupAge == null ? "never backed up" : backupAge + " days since the last one"}</small>
-          </span>
-          <button className="btn sm" onClick={() => setTab("report")}>Open</button>
-          <button className="x" onClick={() => setBackupSnoozed(true)} aria-label="Not now">
-            {"\u00d7"}
-          </button>
         </div>
       )}
 
@@ -5269,6 +5267,7 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
     <>
       {toast && <div className="saved">{toast}</div>}
 
+      <div className="sectionhead no-print">Your appointment</div>
       <div className="no-print">
         <Appointment
           appt={state.appt || { date: "", who: "" }}
@@ -5278,6 +5277,7 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
         />
       </div>
 
+      <div className="sectionhead no-print">What you hand over</div>
       <div className="card no-print">
         <div className="card-t"><span>Report</span></div>
         <select className="inp" value={range} onChange={(e) => setRange(Number(e.target.value))}>
@@ -5406,15 +5406,20 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
 
       {eps.slice(-3).reverse().map((e) => (
         <div className="card" key={"det" + e.id}>
-          <div className="card-t">
-            <span>Day by day · {fmtShortYr(e.start)}</span>
-          </div>
-          <div className="scrollx">
-            <DayTable dates={spanDates(e)} days={state.days} />
-          </div>
+          {/* reference material, not something to scroll past three times over */}
+          <details>
+            <summary className="card-t foldy">
+              <span>Day by day · {fmtShortYr(e.start)}</span>
+              <span className="hint">{spanDates(e).length} days</span>
+            </summary>
+            <div className="scrollx">
+              <DayTable dates={spanDates(e)} days={state.days} />
+            </div>
+          </details>
         </div>
       ))}
 
+      <div className="sectionhead no-print">Keeping it safe</div>
       <div className="no-print">
         <RescuePack pack={state.rescue || []} onChange={onRescue} />
       </div>
@@ -6074,7 +6079,7 @@ function App() {
                 onIll={() => setStatus(date, "unwell")}
                 onClear={() => setStatus(date, null)}
               />
-              <Hero episodes={episodes} days={state.days} date={date} run={run} regimen={state.regimen} />
+              <Hero episodes={episodes} days={state.days} date={date} run={run} regimen={state.regimen} compact />
               <GlassStats days={state.days} date={date} regimen={state.regimen} />
             </>
           )}
