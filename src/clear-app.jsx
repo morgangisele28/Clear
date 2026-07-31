@@ -159,13 +159,15 @@ const CSS = `
 .skyacts{display:flex;align-items:center;gap:8px;}
 /* how long since the last backup, at a glance. Bright on purpose: the header is a
    blue gradient, and the ink greens and reds used elsewhere disappear against it. */
-.bdot{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
-  background:rgba(8,54,69,.26);display:flex;align-items:center;justify-content:center;
+.bpill{display:flex;align-items:center;gap:6px;flex:0 0 auto;border:none;border-radius:99px;
+  padding:8px 11px 8px 10px;background:rgba(8,54,69,.26);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
-.bdot .bd{width:9px;height:9px;border-radius:50%;display:block;background:#fff;}
-.bdot.ok .bd{background:#6BDCA0;box-shadow:0 0 8px 1px rgba(107,220,160,.85);}
-.bdot.warn .bd{background:#FFC24D;box-shadow:0 0 8px 1px rgba(255,194,77,.85);}
-.bdot.bad .bd{background:#FF7A7A;box-shadow:0 0 8px 1px rgba(255,122,122,.85);}
+.bpill .bd{width:8px;height:8px;border-radius:50%;display:block;background:#fff;flex:0 0 auto;}
+.bpill .bt{font-size:9px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;
+  color:rgba(255,255,255,.82);line-height:1;white-space:nowrap;}
+.bpill.ok .bd{background:#6BDCA0;box-shadow:0 0 8px 1px rgba(107,220,160,.85);}
+.bpill.warn .bd{background:#FFC24D;box-shadow:0 0 8px 1px rgba(255,194,77,.85);}
+.bpill.bad .bd{background:#FF7A7A;box-shadow:0 0 8px 1px rgba(255,122,122,.85);}
 .iconbtn{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;
   background:rgba(8,54,69,.26);color:#fff;font-family:var(--display);font-size:16px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;
@@ -325,6 +327,7 @@ const CSS = `
 
 /* ---------- ribbon ---------- */
 .ribbon-card{background:none;margin-top:12px;padding:0;}
+.ribbon-flat{margin-top:18px;}
 .ribbon-inner{background:#fff;border-radius:22px;padding:18px 18px 14px;box-shadow:var(--float);}
 .ribbon-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;gap:10px;}
 .ribbon-title{font-size:12.5px;font-weight:500;color:var(--muted);}
@@ -797,7 +800,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.3";
+const BUILD = "2.4";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1669,12 +1672,13 @@ function markBackedUp() {
 // on its own is not a signal you can read out or see reliably.
 function backupStatus() {
   const at = lastBackupAt();
-  if (!at) return { tone: "bad", label: "No backup taken yet" };
+  if (!at) return { tone: "bad", label: "No backup taken yet", short: "never" };
   const days = diffDays(at, todayISO());
   const said = days <= 0 ? "Backed up today" : `Backed up ${days} day${days === 1 ? "" : "s"} ago`;
-  if (days <= 3) return { tone: "ok", label: said };
-  if (days <= 7) return { tone: "warn", label: said };
-  return { tone: "bad", label: said };
+  const short = days <= 0 ? "today" : days + "d";
+  if (days <= 3) return { tone: "ok", label: said, short };
+  if (days <= 7) return { tone: "warn", label: said, short };
+  return { tone: "bad", label: said, short };
 }
 
 function storageWorks() {
@@ -2439,10 +2443,10 @@ function PlanEditor({ regimen, onChange, onClose }) {
               ))}
             </div>
             <button className="btn sm" onClick={() => set(i, { active: !r.active })}>
-              {r.active ? "Archive" : "Restore"}
+              {r.active ? "Pause" : "Resume"}
             </button>
           </div>
-          {!r.active && <div className="note" style={{ marginTop: 6 }}>Archived</div>}
+          {!r.active && <div className="note" style={{ marginTop: 6 }}>Paused</div>}
         </div>
       ))}
       <div className="btnrow" style={{ marginTop: 12 }}>
@@ -2617,17 +2621,19 @@ function Toggle({ on, label, onClick }) {
 /*  Ribbon — the signature element                                     */
 /* ------------------------------------------------------------------ */
 
-function Ribbon({ days, span = 90, anchor, onPick }) {
+// `flat` drops the card chrome so this can live inside the sputum card, where the
+// chart belongs, instead of floating on its own at the bottom of the page.
+function Ribbon({ days, span = 90, anchor, onPick, flat }) {
   const end = anchor || todayISO();
   const cells = [];
   for (let i = span - 1; i >= 0; i--) cells.push(addDays(end, -i));
   const today = todayISO();
   return (
-    <div className="ribbon-card">
-     <div className="ribbon-inner">
+    <div className={flat ? "ribbon-flat" : "ribbon-card"}>
+     <div className={flat ? "" : "ribbon-inner"}>
       <div className="ribbon-head">
-        <span className="ribbon-title">Sputum record · last {span} days</span>
-        <span className="ribbon-title sm">last {span} days · height is volume</span>
+        <span className="ribbon-title">{flat ? `Last ${span} days` : `Sputum record · last ${span} days`}</span>
+        <span className="ribbon-title sm">{flat ? "height is volume" : `last ${span} days · height is volume`}</span>
       </div>
       <div className="ribbon">
         {cells.map((d) => {
@@ -3349,6 +3355,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   const [showCourse, setShowCourse] = useState(false);
   const [editCourseId, setEditCourseId] = useState(null);
+  const [pausing, setPausing] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [showNote, setShowNote] = useState(false);
   const [showTags, setShowTags] = useState(false);
@@ -3449,10 +3456,20 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   /* ---------------- sections ---------------- */
 
+  // Courses with a daily frequency are tickable; the count stays separate from the
+  // care ring even though they now share a card, because doseCount walks the regimen.
+  const doseTakers = activeCourses.filter((c) => c.freq > 0);
+  // Pausing is the same `active` flag the plan editor sets. A paused treatment leaves
+  // today's target, so it is not recorded as a dose you missed, and every day already
+  // logged keeps the plan it was scored against.
+  const pausedPlan = (state.regimen || []).filter((r) => !r.active && r.name);
+  const setTreatmentPaused = (id, isPaused) =>
+    setRegimen((state.regimen || []).map((r) => (r.id === id ? { ...r, active: !isPaused } : r)));
+
   const careSection = (
     <div className="card">
       <div className="card-t">
-        <span>Daily airway care</span>
+        <span>Today's care</span>
         <button className="btn sm" onClick={() => setEditPlan((v) => !v)}>
           {editPlan ? "Close" : "Edit plan"}
         </button>
@@ -3464,6 +3481,9 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         <>
           {todayPlan.length === 0 && (
             <div className="note">No treatments in your plan yet. Edit plan to add one.</div>
+          )}
+          {doseTakers.length > 0 && todayPlan.length > 0 && (
+            <div className="rowlab" style={{ marginTop: 0 }}>Your plan</div>
           )}
           {todayPlan.map((r) => (
             <DosePill
@@ -3477,7 +3497,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           {careDone >= planTotal && planTotal > 0 ? (
             <div className="done-flag">
               <span className="tick">{"\u2713"}</span>
-              Today's care is done
+              Your plan is done for today
             </div>
           ) : (
             planTotal > 0 && (
@@ -3485,6 +3505,74 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 The plus records an extra session.
               </div>
             )
+          )}
+
+          {/* Pausing sets the same active flag the plan editor uses, so a paused
+              treatment drops out of today's target instead of counting against you,
+              and days already logged keep the plan they were scored on. */}
+          {pausedPlan.length > 0 && (
+            <>
+              <div className="rowlab">Paused</div>
+              <div className="chips">
+                {pausedPlan.map((r) => (
+                  <button key={r.id} className="chip" onClick={() => setTreatmentPaused(r.id, false)}>
+                    {r.name}
+                    {"  \u21ba"}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {todayPlan.length > 0 && (
+            <div className="chips" style={{ marginTop: 10 }}>
+              <button className="chip add" onClick={() => setPausing((v) => !v)}>
+                {pausing ? "Done" : "Pause a treatment"}
+              </button>
+            </div>
+          )}
+          {pausing && (
+            <>
+              <div className="chips" style={{ marginTop: 8 }}>
+                {todayPlan.map((r) => (
+                  <button key={r.id} className="chip" onClick={() => setTreatmentPaused(r.id, true)}>
+                    {r.name}
+                    {"  \u23f8"}
+                  </button>
+                ))}
+              </div>
+              <div className="note" style={{ marginTop: 10 }}>
+                For something you have been told to stop for a while. It comes off today's total
+                rather than counting as a missed dose.
+              </div>
+            </>
+          )}
+
+          {doseTakers.length > 0 && (
+            <>
+              <div className="rowlab">
+                Medication course
+                <Info title="Medication doses">
+                  <p>Tick off each dose of a course as you take it.</p>
+                  <p>
+                    These are counted on their own, apart from your care plan. Putting them together
+                    would change what the ring has meant on every day you have already logged.
+                  </p>
+                  <p>When a course finishes it reports how many of its doses you ticked off.</p>
+                </Info>
+              </div>
+              {doseTakers.map((c) => (
+                <div key={c.id}>
+                  <DosePill
+                    label={c.drug}
+                    target={c.freq}
+                    count={(day.courseDoses || {})[c.id] || 0}
+                    onSet={(n) => setCourseDose(date, c.id, n)}
+                    allowExtra={false}
+                  />
+                  {c.note ? <div className="note dosenote">{c.note}</div> : null}
+                </div>
+              ))}
+            </>
           )}
 
           <div className="rowlab">Taken as needed</div>
@@ -3552,6 +3640,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           )}
         </>
       )}
+      <Ribbon days={state.days} span={90} flat onPick={(d) => setDate(d)} />
     </div>
   );
 
@@ -3802,42 +3891,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
     </>
   );
 
-  // Ticking doses off a course, in the same shape as airway care, but deliberately a
-  // separate card and a separate count: the care ring means "my daily plan", and
-  // folding a two-week antibiotic into it would change what that number has meant
-  // across every day already recorded.
-  const doseTakers = activeCourses.filter((c) => c.freq > 0);
-  const courseDoseSection = doseTakers.length > 0 && (
-    <div className="card">
-      <div className="card-t">
-        <span className="ttl">
-          Medication doses today
-          <Info title="Medication doses">
-            <p>Tick off each dose of a course as you take it.</p>
-            <p>
-              These are counted on their own, separately from your daily airway care. Putting them together would
-              change what the care ring has meant on every day you have already logged.
-            </p>
-            <p>When a course finishes it reports how many of its doses you ticked off.</p>
-          </Info>
-        </span>
-      </div>
-      {doseTakers.map((c) => (
-        <div key={c.id}>
-          <DosePill
-            label={c.drug}
-            target={c.freq}
-            count={(day.courseDoses || {})[c.id] || 0}
-            onSet={(n) => setCourseDose(date, c.id, n)}
-            allowExtra={false}
-          />
-          {c.note ? <div className="note dosenote">{c.note}</div> : null}
-        </div>
-      ))}
-
-    </div>
-  );
-
   const hasTags = (day.tags || []).length > 0;
   const tagSection = (
     <div className="card">
@@ -4012,7 +4065,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       {isUnwell ? (
         <>
           {careSection}
-          {courseDoseSection}
           {sputumSection}
           {symptomSection}
           {detailSection}
@@ -4025,7 +4077,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       ) : (
         <>
           {careSection}
-          {courseDoseSection}
           {sputumSection}
           {airSection}
           {tagSection}
@@ -4050,8 +4101,6 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
           {logged ? "This day is stored on your device." : "Entries save as you type."}
         </div>
       </div>
-
-      <Ribbon days={state.days} span={90} onPick={(d) => setDate(d)} />
 
       {logged && (
         <button className="btn wide" style={{ marginTop: 14, color: "var(--faint)" }} onClick={() => clearDay(date)}>
@@ -5813,7 +5862,7 @@ function App() {
                 <span className="sub">{TITLES[tab][1]}</span>
               )}
               <button
-                className={"bdot " + backup.tone}
+                className={"bpill " + backup.tone}
                 aria-label={backup.label + ". Open backup."}
                 title={backup.label}
                 onClick={() => {
@@ -5825,6 +5874,7 @@ function App() {
                 }}
               >
                 <span className="bd" />
+                <span className="bt">{backup.short}</span>
               </button>
               <button
                 className="iconbtn"
