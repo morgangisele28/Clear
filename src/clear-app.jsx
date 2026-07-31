@@ -198,6 +198,11 @@ const CSS = `
   margin:0;line-height:1.15;}
 .modal-x{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
   color:var(--ink-2);font-size:17px;display:flex;align-items:center;justify-content:center;padding:0;}
+/* a close for a card that lives in the page rather than over it: smaller than
+   the modal's, and set back so it reads as optional next to the title */
+.cardx{width:28px;height:28px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
+  color:var(--faint);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;
+  padding:0;margin:-4px -4px -4px 0;}
 .pts{margin:22px 0 0;}
 .pt{display:flex;gap:13px;padding:13px 0;}
 .pt+.pt{box-shadow:inset 0 1px 0 var(--hair-2);}
@@ -944,7 +949,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.4";
+const BUILD = "3.4.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1268,6 +1273,7 @@ function earlyWarning(days, regimen) {
     const shift = mean(colNow) - mean(colWas);
     if (shift >= 1.3)
       out.push({
+        key: "sputum-colour",
         level: "watch",
         text: `Sputum has been running ${shift.toFixed(1)} steps more purulent across your last three entries than the eight before them. A sustained colour shift is the earliest reliable sign of an exacerbation.`,
       });
@@ -1276,7 +1282,7 @@ function earlyWarning(days, regimen) {
   const volNow = series((d) => d.sputum.volume, 3);
   const volWas = series((d) => d.sputum.volume, 8, 3);
   if (volNow.length && volWas.length && mean(volNow) - mean(volWas) >= 1.3)
-    out.push({ level: "watch", text: "Sputum volume is up against your recent baseline over the last three entries." });
+    out.push({ key: "sputum-volume", level: "watch", text: "Sputum volume is up against your recent baseline over the last three entries." });
 
   const pfNow = series((d) => d.peakFlow, 3);
   const pfWas = series((d) => d.peakFlow, 6, 3);
@@ -1284,6 +1290,7 @@ function earlyWarning(days, regimen) {
     const drop = Math.round(((mean(pfWas) - mean(pfNow)) / mean(pfWas)) * 100);
     if (drop >= 8)
       out.push({
+        key: "peak-flow",
         level: "watch",
         text: `Peak flow is averaging ${drop}% lower than your previous six readings. Worth blowing again today before reading much into it, since technique drifts.`,
       });
@@ -1299,6 +1306,7 @@ function earlyWarning(days, regimen) {
     const up = Math.round(((mean(hrNow) - base) / base) * 100);
     if (up >= 10)
       out.push({
+        key: "resting-hr",
         level: "note",
         text: `Resting heart rate is running ${up}% above your usual ${base}. It often lifts a day or two ahead of symptoms.`,
       });
@@ -1321,6 +1329,7 @@ function earlyWarning(days, regimen) {
   const before = rate(7, 28);
   if (week != null && before != null && before - week >= 22)
     out.push({
+      key: "care-slip",
       level: "note",
       text: `Airway care has slipped about ${Math.round(before - week)} points this week against the three before it. Not a symptom, but it is the thing most within your control.`,
     });
@@ -2773,14 +2782,24 @@ function Gear() {
   );
 }
 
-function EarlyWarning({ days, regimen }) {
+// Dismissable, but it cannot be silenced for good. What gets remembered is which
+// signals were showing and how serious each one was — so a new signal, or an
+// existing one stepping up from a note to a watch, brings the card straight back.
+// Only the exact set you actually read stays hidden.
+function EarlyWarning({ days, regimen, seen, onDismiss }) {
   const signals = useMemo(() => earlyWarning(days, regimen), [days, regimen]);
-  if (!signals.length) return null;
+  // built from the kind and level, never the wording: the sentences carry live
+  // numbers, and keying on those would resurface the card on every decimal
+  const sig = signals.map((x) => x.level + ":" + x.key).sort().join("|");
+  if (!signals.length || seen === sig) return null;
   const watch = signals.some((x) => x.level === "watch");
   return (
     <div className="card">
       <div className="card-t">
         <span>{watch ? "Worth watching" : "Drifting"}</span>
+        <button className="cardx" onClick={() => onDismiss(sig)} aria-label="Dismiss">
+          {"×"}
+        </button>
       </div>
       {signals.map((x, i) => (
         <div className={"insight " + (x.level === "watch" ? "warn" : "")} key={i} style={i ? {} : { marginTop: 0 }}>
@@ -2789,7 +2808,8 @@ function EarlyWarning({ days, regimen }) {
       ))}
       <div className="note" style={{ marginTop: 11 }}>
         Read from your own history, not from anyone else's numbers. A single reading is noise; these only appear
-        when a run of them moves together.
+        when a run of them moves together. Close it once you have read it — it comes back if something new shows
+        up, or if any of this gets worse.
       </div>
     </div>
   );
@@ -3932,7 +3952,7 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
@@ -4677,7 +4697,12 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         />
       )}
 
-      <EarlyWarning days={state.days} regimen={state.regimen} />
+      <EarlyWarning
+        days={state.days}
+        regimen={state.regimen}
+        seen={state.ewSeen}
+        onDismiss={onDismissWarning}
+      />
 
       {isUnwell && (state.rescue || []).length > 0 && (
         <RescuePack
@@ -6419,6 +6444,10 @@ function App() {
     download(name, ics, "text/calendar");
   }, [state.remindTimes]);
 
+  // remembers the exact set of signals that was on screen when it was closed, so
+  // anything new or anything worse gets past it
+  const dismissWarning = useCallback((sig) => setState((s) => ({ ...s, ewSeen: sig })), []);
+
   const setRescue = useCallback((r) => setState((s) => ({ ...s, rescue: r })), []);
   const setAppt = useCallback((a) => setState((s) => ({ ...s, appt: a })), []);
   const setQuestions = useCallback((q) => setState((s) => ({ ...s, questions: q })), []);
@@ -6778,6 +6807,7 @@ function App() {
             setTab={setTab}
             setRescue={setRescue}
             setQuestions={setQuestions}
+            onDismissWarning={dismissWarning}
             addCustomDrug={addCustomDrug}
             setCourseOutcome={setCourseOutcome}
             setCourseNote={setCourseNote}
