@@ -113,7 +113,10 @@ const CSS = `
 .eyebrow{font-family:var(--body);font-size:9.5px;font-weight:600;letter-spacing:0.17em;text-transform:uppercase;}
 
 /* ---------- sky ---------- */
-.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 30px;
+/* the sheet is pulled up 26px to round its corner over the sky, so the bottom
+   padding here has to clear that before it counts as breathing room, or the
+   glance strip gets its numbers sliced off by the sheet edge */
+.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 56px;
   background:linear-gradient(176deg,#0A5F97 0%,var(--sky-1) 32%,#1793CE 64%,var(--sky-2) 86%,var(--sky-3) 95%,var(--canvas) 100%);}
 .sky::before{content:"";position:absolute;top:-170px;right:-130px;width:400px;height:400px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,calc(.20 + var(--clarity,0) * .34)) 0%,
@@ -305,7 +308,9 @@ const CSS = `
 
 /* ---------- sheet ---------- */
 .sheet{background:var(--canvas);border-radius:26px 26px 0 0;margin:-26px auto 0;position:relative;z-index:2;
-  max-width:720px;padding:20px 17px 130px;box-shadow:0 -1px 0 rgba(255,255,255,.7) inset, 0 -14px 30px -18px rgba(8,54,69,.45);}
+  max-width:720px;padding:26px 17px 130px;box-shadow:0 -1px 0 rgba(255,255,255,.7) inset, 0 -14px 30px -18px rgba(8,54,69,.45);}
+/* the first card would otherwise stack its own margin on top of that padding */
+.sheet>*:first-child{margin-top:0;}
 /* pan-y hands vertical scrolling back to the browser while the horizontal axis stays
    ours to drag; the controls below need their own axis back */
 .sheet.swipeable{touch-action:pan-y;}
@@ -321,6 +326,14 @@ const CSS = `
 details[open] .card-t.foldy{margin-bottom:14px;}
 .sectionhead{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:0.06em;
   text-transform:uppercase;color:var(--faint);margin:26px 4px 2px;}
+/* settings live inside the sheet, which is already white, so the cards drop the
+   float and take a paper fill instead — otherwise they are white on white */
+.setgrp{margin-top:20px;}
+.setgrp .card{background:var(--paper);box-shadow:none;margin-top:12px;}
+.setgrp .card:first-child{margin-top:0;}
+.setgrp .trackrow{background:transparent;}
+/* plain buttons are paper-filled too, so on a paper card they vanish */
+.setgrp .btn:not(.pri){background:var(--paper-2);}
 .infob{width:19px;height:19px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
   background:var(--paper-2);color:var(--muted);font-family:var(--display);font-size:11px;
   font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;
@@ -931,7 +944,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.3.1";
+const BUILD = "3.4";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -2619,7 +2632,18 @@ function EpisodeHandover({ episodes, days, regimen }) {
   );
 }
 
-function About({ onClose, intro, onAck, onShareBackup, onShareWeek }) {
+// Doubles as the first-run welcome and, after that, the settings sheet. The two
+// share a shell because the things worth saying on day one \u2014 it lives on this
+// phone, nobody else has a copy, back it up \u2014 are the things worth being able to
+// find again, and a second sheet holding only those would be a sheet nobody opens.
+function About({
+  onClose,
+  intro,
+  onAck,
+  onShareBackup,
+  onShareWeek,
+  settings,
+}) {
   const close = intro ? onAck : onClose;
   return (
     <>
@@ -2628,12 +2652,31 @@ function About({ onClose, intro, onAck, onShareBackup, onShareWeek }) {
         <div className="modal-head">
           <div>
             <span className="wordmark">Clear</span>
-            <h3>{intro ? "Welcome" : "How it works"}</h3>
+            <h3>{intro ? "Welcome" : "Settings"}</h3>
           </div>
           <button className="modal-x" onClick={close} aria-label="Close">
             {"\u00d7"}
           </button>
         </div>
+
+        {!intro && settings && (
+          <div className="setgrp">
+            <ConditionPicker conditions={settings.conditions || []} onChange={settings.onConditions} />
+            <Reminders
+              times={settings.remindTimes || []}
+              onChange={settings.onRemind}
+              onAdd={settings.onAddRemind}
+            />
+            <TrackSettings
+              track={settings.track || {}}
+              onChange={settings.onTrack}
+              unit={settings.unit}
+              onUnit={settings.onUnit}
+            />
+          </div>
+        )}
+
+        {!intro && <div className="sectionhead">How it works</div>}
 
         <div className="pts">
           <div className="pt">
@@ -2709,6 +2752,24 @@ function About({ onClose, intro, onAck, onShareBackup, onShareWeek }) {
         </details>
       </div>
     </>
+  );
+}
+
+// Eight teeth, drawn rather than typed: an emoji gear renders differently on
+// every platform and a font icon would mean carrying a second font.
+function Gear() {
+  const teeth = Array.from({ length: 8 }, (_, i) => i * 45);
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      {/* stubby teeth that sit into the body, and a hollow centre — long spokes
+          and a filled hub read as a sun rather than a gear */}
+      <g fill="currentColor">
+        {teeth.map((a) => (
+          <rect key={a} x="10.4" y="2" width="3.2" height="4.2" rx="1.1" transform={`rotate(${a} 12 12)`} />
+        ))}
+      </g>
+      <circle cx="12" cy="12" r="5.9" fill="none" stroke="currentColor" strokeWidth="3.3" />
+    </svg>
   );
 }
 
@@ -5542,7 +5603,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind, onConditions, onUnit }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5873,38 +5934,9 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
         </div>
       ))}
 
-      <div className="sectionhead no-print">Settings</div>
-      <div className="no-print">
-        <ConditionPicker conditions={state.conditions || []} onChange={onConditions} />
-        <Reminders
-          times={state.remindTimes || []}
-          onChange={onRemind}
-          onAdd={async () => {
-            const times = state.remindTimes || [];
-            if (!times.length) return;
-            const ics = reminderIcs(times, "Airway care");
-            const name = "clear-reminders.ics";
-            try {
-              const file = new File([ics], name, { type: "text/calendar" });
-              if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: "Clear reminders" });
-                setToast("Added");
-                setTimeout(() => setToast(""), 1800);
-                return;
-              }
-            } catch (e) {
-              if (e && e.name === "AbortError") return;
-            }
-            download(name, ics, "text/calendar");
-          }}
-        />
-        <TrackSettings
-          track={state.track || {}}
-          onChange={onTrack}
-          unit={state.weightUnit}
-          onUnit={onUnit}
-        />
-      </div>
+      {/* Conditions, reminders and what you track used to sit here. They are
+          settings, not something you hand to a clinic, and they were stranded
+          under the episode tables — they live behind the gear now. */}
 
       <div className="sectionhead no-print">Keeping it safe</div>
       <div className="no-print">
@@ -6365,6 +6397,28 @@ function App() {
     } catch (e) {}
   }, [state]);
 
+  // Hands the reminder times to the phone's own calendar as a .ics. A real
+  // calendar entry keeps nudging whether or not this app is open, which a web
+  // notification cannot promise on iOS.
+  const addRemindersToCalendar = useCallback(async () => {
+    const times = state.remindTimes || [];
+    if (!times.length) return;
+    const ics = reminderIcs(times, "Airway care");
+    const name = "clear-reminders.ics";
+    try {
+      const file = new File([ics], name, { type: "text/calendar" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Clear reminders" });
+        setFlash("Added");
+        setTimeout(() => setFlash(""), 1800);
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+    download(name, ics, "text/calendar");
+  }, [state.remindTimes]);
+
   const setRescue = useCallback((r) => setState((s) => ({ ...s, rescue: r })), []);
   const setAppt = useCallback((a) => setState((s) => ({ ...s, appt: a })), []);
   const setQuestions = useCallback((q) => setState((s) => ({ ...s, questions: q })), []);
@@ -6555,10 +6609,10 @@ function App() {
               </button>
               <button
                 className="iconbtn"
-                aria-label="About this app"
+                aria-label="Settings"
                 onClick={() => setShowAbout((v) => !v)}
               >
-                ?
+                <Gear />
               </button>
             </div>
           </div>
@@ -6744,10 +6798,6 @@ function App() {
             onAppt={setAppt}
             onQuestions={setQuestions}
             onRescue={setRescue}
-            onTrack={setTrack}
-            onRemind={setRemind}
-            onConditions={setConditions}
-            onUnit={setUnit}
             onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
           />
         )}
@@ -6782,6 +6832,17 @@ function App() {
           onAck={ackIntro}
           onShareBackup={shareBackup}
           onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
+          settings={{
+            conditions: state.conditions,
+            onConditions: setConditions,
+            remindTimes: state.remindTimes,
+            onRemind: setRemind,
+            onAddRemind: addRemindersToCalendar,
+            track: state.track,
+            onTrack: setTrack,
+            unit: state.weightUnit,
+            onUnit: setUnit,
+          }}
         />
       )}
 
