@@ -707,6 +707,49 @@ const SYMPTOMS = [
   ["throat", "Sore throat"],
 ];
 
+// An exacerbation is defined differently by each condition, and the definitions do not
+// merge — a union of three rules would be wrong for all three. The symptoms behind them
+// overlap almost entirely, so they are collected once and each rule is scored on its own.
+// Someone with cystic fibrosis and bronchiectasis sees both, which is the point: the two
+// commonly go together.
+const CONDITIONS = [
+  { key: "bronchiectasis", label: "Bronchiectasis" },
+  { key: "cf", label: "Cystic fibrosis" },
+  { key: "copd", label: "COPD or chronic bronchitis" },
+];
+
+function exacerbationRules(day, conditions) {
+  const sy = day.symptoms || {};
+  const sputumUp = (sy.sputumUp || 0) > 0 || (day.sputum.volume ?? 0) >= 4;
+  const purulent = day.sputum.color != null && day.sputum.color >= 4;
+  const list = conditions && conditions.length ? conditions : ["bronchiectasis"];
+  const has = (k) => list.indexOf(k) !== -1;
+  const out = [];
+
+  // BTS-style: three or more of the six features
+  if (has("bronchiectasis") || has("cf")) {
+    const f = [];
+    if ((sy.cough || 0) > 0) f.push("cough");
+    if (sputumUp) f.push("sputum volume");
+    if (purulent) f.push("purulence");
+    if ((sy.breathless || 0) > 0) f.push("breathlessness");
+    if ((sy.fatigue || 0) > 0) f.push("fatigue");
+    if (day.blood && day.blood !== "none") f.push("haemoptysis");
+    out.push({ key: "bronchiectasis", n: f.length, of: 6, met: f.length >= 3, list: f });
+  }
+
+  // Anthonisen: breathlessness, sputum volume, sputum purulence. Two of the three is
+  // the usual threshold for treating.
+  if (has("copd")) {
+    const c = [];
+    if ((sy.breathless || 0) > 0) c.push("breathlessness");
+    if (sputumUp) c.push("sputum volume");
+    if (purulent) c.push("purulence");
+    out.push({ key: "copd", n: c.length, of: 3, met: c.length >= 2, list: c });
+  }
+  return out;
+}
+
 const SEED_QUESTIONS = [
   {
     id: "q-plan",
@@ -864,7 +907,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.0";
+const BUILD = "3.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -921,7 +964,7 @@ const emptyDay = () => ({
   notes: "",
 });
 
-const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), remindTimes: [], meta: {} });
+const emptyState = () => ({ v: 7, days: {}, courses: [], tags: [...SEED_TAGS], prnMeds: [...SEED_PRN], customDrugs: [], customSymptoms: [], locations: [...SEED_LOCATIONS], regimen: JSON.parse(JSON.stringify(SEED_REGIMEN)), rescue: [], appt: { date: "", who: "" }, questions: [...SEED_QUESTIONS], track: defaultTracking(), remindTimes: [], conditions: [], meta: {} });
 
 function migrate(raw) {
   const fromVersion = (raw && raw.v) || 1;
@@ -938,6 +981,8 @@ function migrate(raw) {
   s.appt = s.appt || { date: "", who: "" };
   s.track = { ...defaultTracking(), ...(s.track || {}) };
   s.remindTimes = s.remindTimes || [];
+  // a log that predates this was scored on the bronchiectasis rule, so it keeps it
+  s.conditions = s.conditions || ["bronchiectasis"];
   s.questions = s.questions || [...SEED_QUESTIONS];
   Object.keys(s.days).forEach((k) => {
     s.days[k] = { ...emptyDay(), ...s.days[k] };
@@ -1932,7 +1977,7 @@ function Info({ title, children, label }) {
 // First run, and reachable afterwards from an empty care card. Builds the plan by
 // tapping suggestions rather than starting from a blank form, but nothing is chosen
 // until it is chosen: the suggestions are categories, not a regimen.
-function Setup({ regimen, track, onChange, onTrack, onClose }) {
+function Setup({ regimen, track, conditions, onChange, onTrack, onConditions, onClose }) {
   const [step, setStep] = useState(1);
   const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(regimen || [])));
   const [own, setOwn] = useState("");
@@ -1948,8 +1993,10 @@ function Setup({ regimen, track, onChange, onTrack, onClose }) {
       <div className="modal" role="dialog" aria-modal="true">
         <div className="modal-head">
           <div>
-            <span className="wordmark">{step === 1 ? "Clear · 1 of 2" : "Clear · 2 of 2"}</span>
-            <h3>{step === 1 ? "Your daily care" : "What can you measure?"}</h3>
+            <span className="wordmark">{"Clear · " + step + " of 3"}</span>
+            <h3>
+              {step === 1 ? "What do you live with?" : step === 2 ? "Your daily care" : "What can you measure?"}
+            </h3>
           </div>
           <button className="modal-x" aria-label="Close" onClick={onClose}>
             {"×"}
@@ -1957,6 +2004,13 @@ function Setup({ regimen, track, onChange, onTrack, onClose }) {
         </div>
 
         {step === 1 ? (
+        <>
+        <ConditionPicker conditions={conditions || []} onChange={onConditions} bare />
+        <button className="btn pri wide" style={{ marginTop: 18 }} onClick={() => setStep(2)}>
+          Next
+        </button>
+        </>
+        ) : step === 2 ? (
         <>
         <div className="about">
           <p>
@@ -2040,7 +2094,7 @@ function Setup({ regimen, track, onChange, onTrack, onClose }) {
           style={{ marginTop: 18 }}
           onClick={() => {
             onChange(rows.filter((r) => r.name.trim()));
-            setStep(2);
+            setStep(3);
           }}
         >
           {rows.length ? "Save my plan" : "Skip for now"}
@@ -2118,6 +2172,46 @@ function Reminders({ times, onChange, onAdd }) {
         </p>
       </Info>
     </div>
+  );
+}
+
+function ConditionPicker({ conditions, onChange, bare }) {
+  const list = conditions || [];
+  const on = (k) => list.indexOf(k) !== -1;
+  const toggle = (k) => onChange(on(k) ? list.filter((x) => x !== k) : [...list, k]);
+  const Wrap = "div";
+  return (
+    <Wrap className={bare ? "" : "card"}>
+      {!bare && (
+        <div className="card-t">
+          <span>What you live with</span>
+        </div>
+      )}
+      <div className="note" style={{ marginBottom: 12 }}>
+        Pick any that apply. They often come together, and each one counts an exacerbation
+        differently, so the app scores each rule separately rather than blending them.
+      </div>
+      {CONDITIONS.map((c) => (
+        <button
+          key={c.key}
+          className={"trackrow" + (on(c.key) ? " on" : "")}
+          aria-pressed={on(c.key)}
+          onClick={() => toggle(c.key)}
+        >
+          <span className="tr-tx">
+            <b>{c.label}</b>
+          </span>
+          <span className="tr-sw" aria-hidden="true">
+            <i />
+          </span>
+        </button>
+      ))}
+      {!list.length && (
+        <div className="note" style={{ marginTop: 10 }}>
+          Nothing picked, so the bronchiectasis features are counted by default.
+        </div>
+      )}
+    </Wrap>
   );
 }
 
@@ -3789,17 +3883,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
     .map((r) => ({ name: r.name, left: Math.max(0, r.target - (day.care[r.id] || 0)) }))
     .filter((r) => r.left > 0);
 
-  const exac = useMemo(() => {
-    const sy = day.symptoms || {};
-    const found = [];
-    if ((sy.cough || 0) > 0) found.push("cough");
-    if ((sy.sputumUp || 0) > 0 || (day.sputum.volume ?? 0) >= 4) found.push("sputum volume");
-    if (day.sputum.color != null && day.sputum.color >= 4) found.push("purulence");
-    if ((sy.breathless || 0) > 0) found.push("breathlessness");
-    if ((sy.fatigue || 0) > 0) found.push("fatigue");
-    if (day.blood && day.blood !== "none") found.push("haemoptysis");
-    return { n: found.length, met: found.length >= 3, list: found };
-  }, [day]);
+  const rules = useMemo(() => exacerbationRules(day, state.conditions), [day, state.conditions]);
+  const exac = rules[0] || { n: 0, met: false, list: [] };
 
   // keep the picker sane if the selected day changes underneath it
   const onsetPick =
@@ -4065,11 +4150,24 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         onAddCustom={addCustomSymptom}
         onDeleteCustom={deleteCustomSymptom}
       />
-      {exac.met && (
-        <div className="banner">
-          {exac.n} of the 6 standard exacerbation features are present today ({exac.list.join(", ")}). Three or
-          more sustained over 48 hours is the usual threshold for ringing your team rather than waiting it out.
-          This counts what you logged. It is not a diagnosis.
+      {rules.filter((r) => r.met).map((r) =>
+        r.key === "copd" ? (
+          <div className="banner" key={r.key}>
+            {r.n} of the 3 COPD exacerbation criteria are present today ({r.list.join(", ")}). Two or more is the
+            usual threshold for ringing your team. This counts what you logged. It is not a diagnosis.
+          </div>
+        ) : (
+          <div className="banner" key={r.key}>
+            {r.n} of the 6 standard exacerbation features are present today ({r.list.join(", ")}). Three or more
+            sustained over 48 hours is the usual threshold for ringing your team rather than waiting it out. This
+            counts what you logged. It is not a diagnosis.
+          </div>
+        )
+      )}
+      {(state.conditions || []).indexOf("cf") !== -1 && (
+        <div className="note" style={{ marginTop: 10 }}>
+          Cystic fibrosis exacerbations are judged on more than symptoms — lung function, weight and
+          sinus signs among them — so no count is shown for it here.
         </div>
       )}
     </div>
@@ -5357,7 +5455,7 @@ function StorageHealth({ days }) {
   );
 }
 
-function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind }) {
+function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek, onTrack, onRemind, onConditions }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
   const fileRef = useRef(null);
@@ -5690,6 +5788,7 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
 
       <div className="sectionhead no-print">Settings</div>
       <div className="no-print">
+        <ConditionPicker conditions={state.conditions || []} onChange={onConditions} />
         <Reminders
           times={state.remindTimes || []}
           onChange={onRemind}
@@ -6187,6 +6286,10 @@ function App() {
     setState((s) => ({ ...s, remindTimes: t }));
   }, []);
 
+  const setConditions = useCallback((c) => {
+    setState((s) => ({ ...s, conditions: c }));
+  }, []);
+
   const addPrnMed = useCallback((n) => {
     setState((s) =>
       (s.prnMeds || []).includes(n) ? s : { ...s, prnMeds: [...(s.prnMeds || []), n] }
@@ -6544,6 +6647,7 @@ function App() {
             onRescue={setRescue}
             onTrack={setTrack}
             onRemind={setRemind}
+            onConditions={setConditions}
             onShareWeek={() => shareText("Clear, this week", weekDigest(state.days, state.regimen))}
           />
         )}
@@ -6553,6 +6657,8 @@ function App() {
         <Setup
           regimen={state.regimen || []}
           track={state.track || {}}
+          conditions={state.conditions || []}
+          onConditions={setConditions}
           onChange={(r) => {
             setRegimen(r);
             // saving the plan makes needsPlan false, which would unmount the sheet
