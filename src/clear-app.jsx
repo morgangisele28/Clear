@@ -407,6 +407,8 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .care-row .nm{flex:1;font-size:14px;color:var(--ink);letter-spacing:-0.01em;}
 .care-row .nm small{display:block;font-size:11px;color:var(--faint);margin-top:1px;}
 .planrow{background:#fff;border-radius:14px;padding:13px;margin-bottom:9px;}
+/* the modal is already white, so the rows need their own ground to sit on */
+.modal .planrow{background:var(--paper);}
 .planrow .inp{background:var(--paper);margin-bottom:7px;}
 .planfoot{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
 .doserow{display:flex;align-items:center;gap:8px;margin-top:8px;}
@@ -690,7 +692,26 @@ const SEED_QUESTIONS = [
   },
 ];
 
-const SEED_REGIMEN = [
+// Empty on purpose. A plan belongs to the person following it, and starting everyone
+// on somebody else's treatments makes the ring a lie until they notice and fix it.
+// Setup offers the list below as suggestions, with nothing chosen.
+const SEED_REGIMEN = [];
+
+// Categories rather than prescriptions, here to save typing. Names and doses are all
+// editable, and nothing is selected until it is tapped.
+const SUGGESTED_CARE = [
+  { name: "Nebulised saline", target: 1 },
+  { name: "Airway clearance device", target: 1 },
+  { name: "Breathing exercises", target: 1 },
+  { name: "Mucolytic", target: 2 },
+  { name: "Preventer inhaler", target: 2 },
+  { name: "Nebulised antibiotic", target: 2 },
+  { name: "Exercise", target: 1 },
+];
+
+// The sample year needs a plan to demonstrate, but it is a made-up person's, not a
+// default anyone inherits.
+const SAMPLE_REGIMEN = [
   { id: "saline", name: "Saline neb", target: 1, note: "", active: true },
   { id: "aerobika", name: "Aerobika", target: 1, note: "", active: true },
   { id: "nac", name: "NAC", target: 2, note: "600 mg", active: true },
@@ -777,8 +798,8 @@ function courseAdherence(course, days) {
   return expected > 0 ? { taken, expected } : null;
 }
 
-const SEED_TAGS = ["Preschool bug", "Household illness", "Travel or flight", "Poor sleep", "Air quality", "Saw the doctor", "Missed airway care"];
-const SEED_PRN = ["Guaifenesin (Mucinex)"];
+const SEED_TAGS = ["Household illness", "Travel or flight", "Poor sleep", "Air quality", "Saw the doctor", "Missed airway care"];
+const SEED_PRN = [];
 const ORGANISMS = ["", "No growth", "Pseudomonas aeruginosa", "Haemophilus influenzae", "Streptococcus pneumoniae", "Staphylococcus aureus", "Moraxella catarrhalis", "Non-tuberculous mycobacteria", "Aspergillus", "Mixed flora", "Result pending", "Other"];
 const OUTCOMES = [
   { v: "resolved", label: "Cleared it" },
@@ -786,7 +807,9 @@ const OUTCOMES = [
   { v: "failed", label: "Didn't work" },
 ];
 
-const SEED_LOCATIONS = [{ name: "Khlong Toei, Bangkok", lat: 13.7185, lon: 100.562 }];
+// Empty: the air quality feature asks for a location, and shipping one person's
+// neighbourhood to everyone is both wrong and a small thing to give away.
+const SEED_LOCATIONS = [];
 
 // US EPA breakpoints, softened to sit in the palette
 const AQI_BANDS = [
@@ -800,7 +823,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.4";
+const BUILD = "2.5";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -866,10 +889,10 @@ function migrate(raw) {
   s.courses = s.courses || [];
   s.tags = s.tags && s.tags.length ? s.tags : [...SEED_TAGS];
   s.customSymptoms = s.customSymptoms || [];
-  s.prnMeds = s.prnMeds && s.prnMeds.length ? s.prnMeds : [...SEED_PRN];
+  s.prnMeds = s.prnMeds || [];
   s.customDrugs = s.customDrugs || [];
-  s.locations = s.locations && s.locations.length ? s.locations : [...SEED_LOCATIONS];
-  s.regimen = s.regimen && s.regimen.length ? s.regimen : JSON.parse(JSON.stringify(SEED_REGIMEN));
+  s.locations = s.locations || [];
+  s.regimen = s.regimen || [];
   s.rescue = s.rescue || [];
   s.appt = s.appt || { date: "", who: "" };
   s.questions = s.questions || [...SEED_QUESTIONS];
@@ -1290,6 +1313,9 @@ function sampleYear() {
   const pick = (a) => a[Math.floor(rnd() * a.length)];
 
   const st = emptyState();
+  st.regimen = JSON.parse(JSON.stringify(SAMPLE_REGIMEN));
+  st.prnMeds = ["Guaifenesin (Mucinex)"];
+  st.locations = [{ name: "Khlong Toei, Bangkok", lat: 13.7185, lon: 100.562 }];
   const start = addDays(todayISO(), -400);
   const eps = [
     { at: 35, len: 12, drug: null, blood: false },
@@ -1783,6 +1809,127 @@ function Info({ title, children, label }) {
           </div>
         </>
       )}
+    </>
+  );
+}
+
+// First run, and reachable afterwards from an empty care card. Builds the plan by
+// tapping suggestions rather than starting from a blank form, but nothing is chosen
+// until it is chosen: the suggestions are categories, not a regimen.
+function Setup({ regimen, onChange, onClose }) {
+  const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(regimen || [])));
+  const [own, setOwn] = useState("");
+  const has = (n) => rows.some((r) => r.name.toLowerCase() === n.toLowerCase());
+  const add = (name, target) =>
+    setRows((d) => [...d, { id: "r" + Date.now() + d.length, name, target, note: "", active: true }]);
+  const drop = (id) => setRows((d) => d.filter((r) => r.id !== id));
+  const setTarget = (id, target) => setRows((d) => d.map((r) => (r.id === id ? { ...r, target } : r)));
+
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="modal" role="dialog" aria-modal="true">
+        <div className="modal-head">
+          <div>
+            <span className="wordmark">Clear</span>
+            <h3>Your daily care</h3>
+          </div>
+          <button className="modal-x" aria-label="Close" onClick={onClose}>
+            {"×"}
+          </button>
+        </div>
+
+        <div className="about">
+          <p>
+            What do you do on an ordinary day to keep on top of things? Add each one and how many
+            times a day you do it. The ring on your log counts them off.
+          </p>
+        </div>
+
+        {rows.length > 0 && (
+          <>
+            <div className="rowlab">Your plan</div>
+            {rows.map((r) => (
+              <div className="planrow" key={r.id}>
+                <input
+                  className="inp"
+                  value={r.name}
+                  placeholder="Name"
+                  onChange={(e) => setRows((d) => d.map((x) => (x.id === r.id ? { ...x, name: e.target.value } : x)))}
+                />
+                <div className="planfoot">
+                  <span className="note">Times a day</span>
+                  <div className="chips">
+                    {[1, 2, 3, 4].map((n) => (
+                      <button
+                        key={n}
+                        className={"chip" + (r.target === n ? " on" : "")}
+                        onClick={() => setTarget(r.id, n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button className="chip add" onClick={() => drop(r.id)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        <div className="rowlab">Common ones</div>
+        <div className="chips">
+          {SUGGESTED_CARE.filter((sug) => !has(sug.name)).map((sug) => (
+            <button key={sug.name} className="chip add" onClick={() => add(sug.name, sug.target)}>
+              {"+ " + sug.name}
+            </button>
+          ))}
+        </div>
+        <div className="note" style={{ marginTop: 10 }}>
+          A list to save you typing, not a recommendation. Your team decides what belongs here.
+        </div>
+
+        <div className="rowlab">Something else</div>
+        <div className="chipwrap">
+          <input
+            className="inp"
+            placeholder="Name it"
+            value={own}
+            onChange={(e) => setOwn(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && own.trim()) {
+                add(own.trim(), 1);
+                setOwn("");
+              }
+            }}
+          />
+          <button
+            className="btn pri"
+            onClick={() => {
+              if (own.trim()) add(own.trim(), 1);
+              setOwn("");
+            }}
+          >
+            Add
+          </button>
+        </div>
+
+        <button
+          className="btn pri wide"
+          style={{ marginTop: 18 }}
+          onClick={() => {
+            onChange(rows.filter((r) => r.name.trim()));
+            onClose();
+          }}
+        >
+          {rows.length ? "Save my plan" : "Skip for now"}
+        </button>
+        <div className="note" style={{ marginTop: 10 }}>
+          You can change any of this later from Edit plan.
+        </div>
+      </div>
     </>
   );
 }
@@ -3347,7 +3494,7 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
@@ -3479,8 +3626,13 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         <PlanEditor regimen={state.regimen || []} onChange={setRegimen} onClose={() => setEditPlan(false)} />
       ) : (
         <>
-          {todayPlan.length === 0 && (
-            <div className="note">No treatments in your plan yet. Edit plan to add one.</div>
+          {todayPlan.length === 0 && pausedPlan.length === 0 && (
+            <>
+              <div className="note">Nothing in your plan yet.</div>
+              <button className="btn pri wide" style={{ marginTop: 12 }} onClick={onSetup}>
+                Set up my daily care
+              </button>
+            </>
           )}
           {doseTakers.length > 0 && todayPlan.length > 0 && (
             <div className="rowlab" style={{ marginTop: 0 }}>Your plan</div>
@@ -5471,7 +5623,17 @@ function App() {
   }, [run.current, state.meta, today]);
 
   // shown once, before there is anything to lose
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [setupDismissed, setSetupDismissed] = useState(false);
   const showIntro = !(state.meta && state.meta.seenIntro) && ready;
+  // Straight after the welcome, and only while there is genuinely nothing to lose:
+  // no plan and no entries. Derived rather than triggered, so it cannot fire twice.
+  const needsPlan =
+    ready &&
+    !showIntro &&
+    !setupDismissed &&
+    !(state.regimen || []).length &&
+    !Object.keys(state.days || {}).length;
   const ackIntro = useCallback(() => {
     setState((s) => ({ ...s, meta: { ...(s.meta || {}), seenIntro: true } }));
   }, []);
@@ -6033,6 +6195,7 @@ function App() {
             deleteCustomSymptom={deleteCustomSymptom}
             deletePrnMed={deletePrnMed}
             deleteCustomDrug={deleteCustomDrug}
+            onSetup={() => setSetupOpen(true)}
             addTag={addTag}
             addCustomSymptom={addCustomSymptom}
             setStatus={setStatus}
@@ -6070,6 +6233,17 @@ function App() {
           />
         )}
       </div>
+
+      {(setupOpen || needsPlan) && (
+        <Setup
+          regimen={state.regimen || []}
+          onChange={setRegimen}
+          onClose={() => {
+            setSetupOpen(false);
+            setSetupDismissed(true);
+          }}
+        />
+      )}
 
       {(showAbout || showIntro) && (
         <About
