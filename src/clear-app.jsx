@@ -864,7 +864,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "2.8";
+const BUILD = "2.9";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1888,7 +1888,8 @@ function Info({ title, children, label }) {
 // First run, and reachable afterwards from an empty care card. Builds the plan by
 // tapping suggestions rather than starting from a blank form, but nothing is chosen
 // until it is chosen: the suggestions are categories, not a regimen.
-function Setup({ regimen, onChange, onClose }) {
+function Setup({ regimen, track, onChange, onTrack, onClose }) {
+  const [step, setStep] = useState(1);
   const [rows, setRows] = useState(() => JSON.parse(JSON.stringify(regimen || [])));
   const [own, setOwn] = useState("");
   const has = (n) => rows.some((r) => r.name.toLowerCase() === n.toLowerCase());
@@ -1903,14 +1904,16 @@ function Setup({ regimen, onChange, onClose }) {
       <div className="modal" role="dialog" aria-modal="true">
         <div className="modal-head">
           <div>
-            <span className="wordmark">Clear</span>
-            <h3>Your daily care</h3>
+            <span className="wordmark">{step === 1 ? "Clear · 1 of 2" : "Clear · 2 of 2"}</span>
+            <h3>{step === 1 ? "Your daily care" : "What can you measure?"}</h3>
           </div>
           <button className="modal-x" aria-label="Close" onClick={onClose}>
             {"×"}
           </button>
         </div>
 
+        {step === 1 ? (
+        <>
         <div className="about">
           <p>
             What do you do on an ordinary day to keep on top of things? Add each one and how many
@@ -1993,7 +1996,7 @@ function Setup({ regimen, onChange, onClose }) {
           style={{ marginTop: 18 }}
           onClick={() => {
             onChange(rows.filter((r) => r.name.trim()));
-            onClose();
+            setStep(2);
           }}
         >
           {rows.length ? "Save my plan" : "Skip for now"}
@@ -2001,18 +2004,40 @@ function Setup({ regimen, onChange, onClose }) {
         <div className="note" style={{ marginTop: 10 }}>
           You can change any of this later from Edit plan.
         </div>
+        </>
+        ) : (
+        <>
+        {/* Asked once, here, so nobody meets four boxes for devices they do not own. */}
+        <div className="about">
+          <p>
+            Leave on whatever you can actually measure. Anything you switch off will not be asked
+            for, and will not appear on your daily page.
+          </p>
+        </div>
+        <TrackSettings track={track || {}} onChange={onTrack} bare />
+        <button className="btn pri wide" style={{ marginTop: 18 }} onClick={onClose}>
+          Start logging
+        </button>
+        <div className="note" style={{ marginTop: 10 }}>
+          All of this lives under Report → Settings if you want to change it later.
+        </div>
+        </>
+        )}
       </div>
     </>
   );
 }
 
-function TrackSettings({ track, onChange }) {
+function TrackSettings({ track, onChange, bare }) {
   const on = (k) => track[k] !== false;
+  const Wrap = bare ? "div" : "div";
   return (
-    <div className="card">
-      <div className="card-t">
-        <span>What you track</span>
-      </div>
+    <Wrap className={bare ? "" : "card"}>
+      {!bare && (
+        <div className="card-t">
+          <span>What you track</span>
+        </div>
+      )}
       <div className="note" style={{ marginBottom: 12 }}>
         Turn off anything you do not measure. It hides the field and stops the reminders.
         Nothing you have already recorded is removed.
@@ -2033,7 +2058,7 @@ function TrackSettings({ track, onChange }) {
           </span>
         </button>
       ))}
-    </div>
+    </Wrap>
   );
 }
 
@@ -6407,7 +6432,14 @@ function App() {
       {(setupOpen || needsPlan) && (
         <Setup
           regimen={state.regimen || []}
-          onChange={setRegimen}
+          track={state.track || {}}
+          onChange={(r) => {
+            setRegimen(r);
+            // saving the plan makes needsPlan false, which would unmount the sheet
+            // between step one and step two; pin it open so it can finish
+            setSetupOpen(true);
+          }}
+          onTrack={setTrack}
           onClose={() => {
             setSetupOpen(false);
             setSetupDismissed(true);
