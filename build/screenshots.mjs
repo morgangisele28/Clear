@@ -192,6 +192,25 @@ const setValue = (el, v) => {
   el.dispatchEvent(new Event("input", { bubbles: true }));
 };
 
+// Same as card(), minus the overlay sweep: used for cards that only exist while
+// a sheet is open, where clearing overlays would shut the thing being shot.
+const cardIn = async (needle, file, sel = ".card") => {
+  const loc = page.locator(sel).filter({ hasText: needle });
+  if (!(await loc.count())) {
+    console.error("  missing: " + file + " (" + needle + ")");
+    return;
+  }
+  await loc.first().screenshot({ path: join(CARDS, file + ".png") });
+  console.log("  captured " + file);
+};
+
+const clickIn = (re) =>
+  page.evaluate((r) => {
+    const b = [...document.querySelectorAll("button")].find((x) => new RegExp(r, "i").test(x.textContent));
+    if (b) { b.click(); return true; }
+    return false;
+  }, re);
+
 const card = async (needle, file, sel = ".card") => {
   await clearOverlays();
   const loc = page.locator(sel).filter({ hasText: needle });
@@ -302,7 +321,13 @@ await page.waitForTimeout(1100);
 await card("Days between episodes", "gaps");
 await card("Episodes a year", "yoy");
 
-await click("^Report$");
+// Conditions, reminders and what you track live behind the gear in the header,
+// not on the Report tab. clearOverlays would shut the sheet again, so the three
+// captures below reach into it directly rather than going through click()/card().
+await page.evaluate(() => {
+  const g = document.querySelector('[aria-label="Settings"]');
+  if (g) g.click();
+});
 await page.waitForTimeout(1100);
 // pick two, because they do come together and an all-off card advertises nothing
 // one click per evaluate, with a wait between: the row's handler closes over the
@@ -317,14 +342,18 @@ for (const label of ["Bronchiectasis", "Cystic fibrosis"]) {
   }, label);
   await page.waitForTimeout(600);
 }
-await card("What you live with", "conditions");
+await cardIn("What you live with", "conditions");
 // give the reminders card something to show before photographing it
-await click("Add a time");
+await clickIn("Add a time");
 await page.waitForTimeout(500);
-await click("Another time");
+await clickIn("Another time");
 await page.waitForTimeout(700);
-await card("Daily reminders", "remind");
-await card("What you track", "track");
+await cardIn("Daily reminders", "remind");
+await cardIn("What you track", "track");
+// back out of the sheet before the Report captures below
+await clearOverlays();
+await click("^Report$");
+await page.waitForTimeout(1100);
 // fill the appointment so the closing panel is not advertising an empty form
 await page.evaluate(() => {
   const set = (el, v) => {

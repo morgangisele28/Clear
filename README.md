@@ -60,7 +60,7 @@ This is generated from your log by arithmetic, not by a language model. It is a 
 
 ![Longer gaps. Fewer episodes.](screenshots/clear-store-08-patterns.jpg)
 
-**It only asks about things you can actually measure.** Peak flow, FEV1 from a home spirometer, SpO2, temperature, resting heart rate, weight, the MRC breathlessness grade and air quality are each a switch. Turn one off and its field disappears and stops prompting, without touching anything you have already recorded.
+**It only asks about things you can actually measure.** Behind the gear in the top corner: peak flow, FEV1 from a home spirometer, SpO2, temperature, resting heart rate, weight, the MRC breathlessness grade and air quality are each a switch. Turn one off and its field disappears and stops prompting, without touching anything you have already recorded.
 
 You can also set the times you mean to do your care and put them straight into your phone's calendar, repeating daily with an alert. That is a real calendar entry, not a browser notification, so it reminds you whether or not the app is open — and whether or not the app still exists.
 
@@ -96,7 +96,7 @@ The whole app is one HTML file. Your browser downloads it once, and from then on
 
 One exception: if you use the optional air quality feature, the coordinates of the location you chose are sent to [Open-Meteo](https://open-meteo.com) to fetch a reading. Ignore that feature and the app makes no network requests at all after the page has loaded.
 
-Because it is local, it is only as safe as your phone. Use **Report → Send backup somewhere safe** every month or so. That produces a JSON file you can drop into iCloud or Drive, and **Restore backup** reads it back. Clearing your browser data will erase the log, and on some devices so will deleting the app. Keep a backup.
+Because it is local, it is only as safe as your phone. Use **Report → Back up now** every month or so. That produces a JSON file you can drop into iCloud or Drive, and **Restore backup** reads it back. Clearing your browser data will erase the log, and on some devices so will deleting the app. Keep a backup.
 
 Your data is tied to the exact web address you use it at. If you move to a different address, export a backup first and restore it at the new one.
 
