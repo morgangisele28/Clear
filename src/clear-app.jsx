@@ -152,7 +152,10 @@ const CSS = `
   background:linear-gradient(180deg,rgba(239,242,246,.85) 0%,rgba(239,242,246,.45) 55%,rgba(239,242,246,0) 100%);}
 .sky::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");}
-.sky.compact{padding:calc(20px + env(safe-area-inset-top)) 0 28px;}
+/* same arithmetic as .sky above: the sheet is pulled up 26px over this, so the
+   bottom padding has to clear that before any of it counts as breathing room.
+   28px left two, and the sheet edge cut straight under the header. */
+.sky.compact{padding:calc(20px + env(safe-area-inset-top)) 0 50px;}
 .sky-in{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 20px;}
 .sky-title{display:flex;align-items:baseline;justify-content:space-between;color:#fff;gap:12px;}
 .sky-title h1{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em;}
@@ -998,7 +1001,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.7.2";
+const BUILD = "3.7.3";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -3493,7 +3496,7 @@ function Ribbon({ days, span = 90, anchor, onPick, flat }) {
      <div className={flat ? "" : "ribbon-inner"}>
       <div className="ribbon-head">
         <span className="ribbon-title">{flat ? `Last ${span} days` : `Sputum record · last ${span} days`}</span>
-        <span className="ribbon-title sm">{flat ? "height is volume" : `last ${span} days · height is volume`}</span>
+        <span className="ribbon-title sm">height is volume</span>
       </div>
       <div className="ribbon">
         {cells.map((d) => {
