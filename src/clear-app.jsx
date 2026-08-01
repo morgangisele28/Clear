@@ -343,6 +343,14 @@ const CSS = `
 .sheet>*:first-child{margin-top:0;}
 /* pan-y hands vertical scrolling back to the browser while the horizontal axis stays
    ours to drag; the controls below need their own axis back */
+/* The sheet no longer changes the day, but it still has to refuse sideways
+   panning: without this the browser pans the page under any horizontal drag, and
+   dragging a sputum slider shunted the whole screen. Controls that need the axis
+   for themselves take it back. */
+.sheet{touch-action:pan-y;}
+.sheet .scrollx{touch-action:pan-x;}
+.sheet input[type=range],.sheet textarea,.sheet select,.sheet .ribbon{touch-action:auto;}
+
 /* The day-swipe lives on the sky and on the sticky day bar, and nowhere else.
    The sheet below is full of rows that want the horizontal axis for themselves —
    swiping a plan row away, and whatever else gets one later — so the two
@@ -471,7 +479,10 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .swipedel{position:absolute;top:0;right:0;bottom:0;width:88px;border:none;padding:0;
   background:var(--alarm);color:#fff;font-size:12.5px;font-weight:600;letter-spacing:0.01em;
   display:flex;align-items:center;justify-content:center;border-radius:0 14px 14px 0;}
-.swipebody{position:relative;touch-action:pan-y;will-change:transform;}
+/* opaque on purpose: the delete sits behind this, and a row with no background
+   of its own — a course row, say — let the red show straight through it */
+.swipebody{position:relative;touch-action:pan-y;will-change:transform;background:#fff;}
+.card.flat .swipebody,.modal .swipebody{background:var(--paper);}
 .swipewrap .planrow{margin-bottom:0;}
 .planrow{background:#fff;border-radius:14px;padding:13px;margin-bottom:9px;}
 /* the modal is already white, so the rows need their own ground to sit on */
@@ -1079,7 +1090,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.12";
+const BUILD = "3.12.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -7620,12 +7631,11 @@ function App() {
     setTimeout(() => setFlash(""), 1800);
   };
 
-  // Full-screen horizontal swipe to change day. The page tracks the finger and, if the
-  // swipe commits, carries on off the edge while the next day comes in behind it, so
-  // days read as sitting next to each other. Sliders and sideways-scrolling tables
-  // keep their own gestures. The transform is written straight to the node rather than
-  // held in state: this fires on every touchmove and a re-render of the whole day at
-  // that rate drops frames.
+  // Horizontal swipe on the sky, or on the sticky day bar, to change day. It tracks
+  // the finger and, if the swipe commits, carries on off the edge while the next day
+  // comes in behind it, so days read as sitting next to each other. The transform is
+  // written straight to the node rather than held in state: this fires on every
+  // touchmove and re-rendering the whole day at that rate drops frames.
   const SWIPE_OUT_MS = 165;
 
   const goDay = (delta) => {
