@@ -184,9 +184,13 @@ const CSS = `
 .sheet.from-left>*,.sheet.from-right>*{animation:none;}
 .scrim{position:fixed;inset:0;z-index:80;background:rgba(8,54,69,.55);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadein .25s var(--ease) both;}
-/* these open from inside headings that are set in the display face, and a sheet
-   is a DOM child of the thing that opened it, so it has to state its own font */
+/* A sheet is a DOM child of whatever opened it, and several open from card
+   headings, which set a display face, 19px, weight 600 and tightened tracking.
+   Every one of those inherits in, so the sheet resets the lot back to body copy
+   rather than only the family — fixing the family alone still left the text
+   semibold and tracked like a heading. */
 .modal,.modal p,.modal li{font-family:var(--body);}
+.modal{font-size:14.5px;font-weight:400;letter-spacing:normal;line-height:1.5;}
 .modal{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:720px;margin:0 auto;
   background:#fff;border-radius:26px 26px 0 0;max-height:86vh;overflow-y:auto;
   /* the tab bar sits over the foot of the sheet, so the last paragraph needs room to
@@ -994,7 +998,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.7.1";
+const BUILD = "3.7.2";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
