@@ -640,7 +640,7 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .dh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
 .dh b{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-0.015em;color:var(--ink);}
 .dh span{font-size:11px;color:var(--muted);white-space:nowrap;}
-.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px;}
+.dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:11px;}
 .dstats span{display:flex;flex-direction:column;gap:2px;font-size:9.5px;font-weight:600;letter-spacing:0.1em;
   text-transform:uppercase;color:var(--faint);line-height:1.3;}
 .dstats em{font-family:var(--display);font-size:16px;font-weight:600;font-style:normal;letter-spacing:-0.02em;
@@ -1112,7 +1112,7 @@ const STORE_KEY = "bxlog-v1";
 // the header and the thing you tap to open it are recognisably the same object.
 const MARK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAQAElEQVR4nOx9C4yl53nWd/lv5z47M3vzem2vY8d37CQmadJQxyg4TdIUIkSQm6iFoqqFQCWoSAHRZlERSYvKJVUhKSgqFUkrF0QkoCCjymlRU6epUzu+dDe+rB2v9+bdnZkz5/Zfvu/jed7vzMZCaTuzO96pq/mi49k55/z///3v9Xmf9/0nidpdO7oStbt2dO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXrgJ2eO0qYIfXG1YBR48Gw5+3f1LplcceMz967721egMurd6A65FHQjLqnc66S6UfXcjNwWuU+h/Hj1dH77+/UW+w9afGA1Zn4UYT3Pekib7BKJ80Wr8wns1+Y1+3e+b//+6r+cn0UJp2qwu5H5ieng1n6e17957/TuddC2ExrdwDwYRbEm+yRocXZ8F9ZTHLntFaB7XDa8cVEEIYTGr3GeObj87KRjel5nvKIsC0kmx0dli/f38//cprj+kWC92qCItKV8oldeJqVSy5A/TmV177vdPTcEM6c79bVW6v80EZ7fHCeVOjJs49PArhh7tan1E7uHZUAedn9XsnU/erZd3sqSqvoAhf1SFoKMBYrXPTdAe99MtrVfXdgyz72sZxhZ0tzqb+eht0XyuTBq1tmvrV1557ZTq93vj66ZX1Jud5vQ9ewd6zxJg8VSbL7ANZGo5dLJuPL+bJF9QOrR1RwNEQzD9s/Cd96f7xcFqb8dQ5WGQzrUIza5SjtWZW2X5u8iy1SSezP4fD7t84vsTLeX3IBXcbZLkXVu2VTp987TVSY392Ngv56tRVa7Omqr0oVuep0UWibCtxWafw3X4n++VZXd+TJ8lPIiR5dZXXVVfAUyFkNzv/WVf5HxxPG7U+cc1K6crVmWuqxvnUWjPFTzhAA6mGTtZ0uk3y7pWqumdPlj3Oc9g0801T3eKDvrmf2htD8LPE6B/BRx/n56dg/brRH14dVc0qzj0sQ41TmcJoe3bceOjADQoFp2haUJ4d6PQnSh1uOBXCD12j9URdxWXUVVyI7emNTv1aqMIPTkqnRqULw8pXF6GE4QyC0UYPMp0uZMYWVmnIrxxWrkKY0rmyf2PjPLmxb0cYx8se6qSq18vMAJadbnzeVsnHRjOv1ko/m1V1bbULnVTrQaHTbmrNCOFuBV43nMHzKudHM6d85f7qwIWHnn025OoqrqumAAjfzJz/D6Zy3z8tnS5rBwys/axxAQk3HO5naSfTzdSpi17rYZGaqpuaZly50bh0jSv9dRvnWirU9+1pJdd0MtOHDsOgbRc7uVm/dLHGXTctfbM+c0Pc4jhPbBl8mE4rNUb4UTcM0iwzWuNaddUEBU8Ma+NK16PmA4eucw89EsJViwxX7UJV4z+tGv+xCawPwg+zBpkWWfFgN80Ro92kDKNxE9Yr79fr4NZV0FmidceakC8Wrqi9v23jXP3C3o0A0nc4FTMrzuV7Lf0+fPQT/Byh/i3U2RoUAOdaS60OhEhFknQzo/rtVPU7ubYDuJLHCaBgzbzjGmR1m33o7Vp9Dl//W+oqrKuggKAnTv29ULt/MEFYGJc1DBSJFBJFqG8yK7VgM3IeacANq6DOTl04XjeE6GFpkNlbYeXL8KD9/OLRo0cTANU2P+0XSdsYr5GwEyTv6tIVlToMb6tLyHZYq2dC5S+k1ncXQrjFwRsqH6p+bpdg+FBAgJ5RkRqC36CTaaO7JvmbiFCvFMYcfb0T8+seglYqdXfi/b+s66BLpFVYLaCgVQjFioaHCATDC1PoY2Xiw0tQzEkI6JRz7mwd1DmkBniFK3GcxPjbb/9keHXUPN7NdXpkXzFY7GQdrU1zcrX6zxvXrBvVApyd4ZzrXvlzTrlXq1qfHDX+xdVZfRLKWYe04ZT4jwsqTYxq5zGF4E1V114bF/7JuFF/Sb3O63VVAAqduzra/d+q9AmgODG4GsD/l7qJvnaxsAf7eYp4c/Hk0P0BhHMcSPEi8nDQTllvdA1w6WDOY4SY2WTWCM3QfcvFTr9lblrqZ/00M4YFG8J5frCXfnTjutPKIWWoGY5dB/ofI9fMbBKCtbqEd1wYV+H0t4bVy0jC5VI71W9abqt9fasXe6nKkN0ZjmYzlM3Kfwn7e496HdfrpoCXX365lTn371yt29MS8aFyrEI14CIdXhujzWIvye66tnfotoOtHO+fxAcXkFNftZYRAaHcILwbRYA0nVRhxvMu69ZguZtfCw8yEK5iJoHAdKrDTb/97Ppefmc48zMUX7PS+zXc4QSCb3BZgzr4Ai48gqJfuWmxXb3jyJ7BdcstnSAIIW+g+tYKdZqC96jprNGzaVOk3v/CykpYUK/T2vYccOLEygLYhLcMlnsP+lq9iy7NKI9YqxrcmEIEV5CcNpEIxH/MtYPWO59/tfz1ytfQTihMEAV5/BvRIgDM6OFaWbf5/Wo4dsmBhQQ5IqB2C2Ud/NrEj4CakuHUiZesVw7Axg/pURYOYVWoE23H3jmcT62hDkhu2d/5iA7OVo0Si5AkzBdCkndSiSMUkRLxd2Rt/R//8MXJz3tbH7/j8OCi2sa1rR5w/MTw1pmyXyqs+UKu1Q+j/ESs14AcmR50M1iZN1XtNN+HM4SEbgCLg9d3FtvpEgxwGpSeBqMrJNcEEQuZUa/MavcqMP25z/zGs7ktWrcjtFjE6YAkHqhHJJDZuPKjUD3HIhn1RbNWOncKajyP84N/0xb2X2pj4Q1mtNjKCiTuPtWfp1bhO6GGoTR40VC67UQtdFPZe1k5DS/4cLcIX8pU8t+PPb96r9rGtW0KeOSRRxKgl/fWzvX2Lxd7aOR0aZAwBmBbrKyPqglsp0KYofDE9LJcG6BSqEMtwCLHmVYzS2oB4cUFsG1GrwAZnUMC/9bth/sLg477+4k1SU7pkF5DDOoWpoBDeJ8d+SA1NvPhWzj9S1DUWV4N14HDGQePgjJCCSiaNJB0u41YB+1A8KSfFEKVWkAe4Jnpudwg9wuoqvcvFotlXXdnynwPrmHVNq1tC0H3g4t//KX1R/qF/qAxyd2M+bR0J6LEhQAXiTYguFBWlaogDQhSaQkBwewp1Pv6xeDw2Un9+LlRdd7BfBPtvTOJhXBO8dDD/dZD1+3tfJdNGDIUldjAOwCSqApllxP10w8/cdHAOV5EKHnZWDXF99q8DCy/Xsz18mKR3dNOzB1IIZrhhnAXBhCYR1q5ld8Bn8QTyJxyjz44XVhr9wyy9fMrs4cBTZ3aprWtOaDXs+sHu9n9YDY1kAhiqAqsNElEtjJDNkwzyeG+lYeFIb4GhgF6w56OvSdLkntuWMx+4MRK+gtPnZ58pVFgJ7TOUDCvDlr5/n397J3WBuNw+zUx5sxNV6e+QripkEeBiEyvk4Wfrir9GC600nh3CgGu5g7etJDfe9u+1o/GWO9h4aAfkGWYS4jQvCTzmKsQJhHWAoxGA7nh+wx0+PdyN3tH2jGl2sa1rTlgX7v1IaTBZDSpgR0DuR4FPgcvKIMWZejSStyc1dIMn+HmwwVgvZWxC4CagJCe1vZAkYQhoswEIXq6v0jfqiRiAdIgzl1Yq9zFUTVdnTRkOqeoZEuEEsvcgPDRWczNd+8tzMe6Jr0R6GiUBLO2XCTvd403tO7zI1edWYN/wouA0AKF32tZCFszJEmhyO9NahaOUAZeEyCBugq2E9IH1TaubWtJnjlzpjNY2ntsOnbX0LVR5ISzayX4BBvg4bAm3GSeIF5bsfjJPEQxG6L4Uh24P7PuCFQopFDjx/OIChcQFrKF3N7LkIGPDYThL4yqyflJPYaAxpCfg9AtKGtAWRRrCNm4nGe3a4YwtNxJEe3U0kJhb4YGk1YGv4P6wcJC4MowyVoWEoBGzFlTWP+4jHGTv+P8am8vAT1uJCS128nZUW5v3qv1utqGtW0haLC8/AMw80P4Z2DiyiHFw4uF6rUTgXiwpHBqpaS1o9ixDAEs/aEM0MSAQUzITH6UXjsz2UInuwPmLHGZsJCLQj233gCee+btGiHCmyR40EvEqxolMbwArgBZ2sTYI4v52yFkywxPgAMeKvRwTiAeNmVo1RJqaIYtGMWUSAh7PTDIVA+sXQZEMMZ3cIiEKNYd0My+buP/Lv71KbUNa9sUAFjw1wlsKEuGFwa3lpSp3DiaAJDuoJWGi+MaFSmQRwUkBMEhRBjGYy4qYbmXJnluBbYAi0O6EC4kDGWEGawfAR8URiiRzOvxrPxNANEz7Ux/P0DQHpR6TT+znQODoptnaBvAqaA0HMviyllaNOM98lJAXS3eT93iWKpfWqF7AEHbOUEObwKGBLdiXpCbsswRABNKf0T9aVLAmfX1fQAK74acGU8F0oFEECxJaiEhzg4NhJvoAVogaarV2TVn4BF+LBbrdRfHFLlRNQ+Wqpm1MLA+TojeAZQQ0LjxMwiggnEGnP43f/uuvT8Otiw88tSFM708/QQ8jaAlAY8Exk1pJoZ2zsAR+TRui3if/A/zD4ybCtALhVH7FlJ4GiBoQlAQJByyEGMuEO+MtiQeit/unIZwfUvrl9QVritWwLFvja/pJOm/QphIK+JpFZvquNFAw7a4gW5uERMUqlZHSK4IGw/0E7U6qs3aFB31xIQJvCKA/SoAOzIraCkQebA4WofYJ4j10lhXBrSR/iYk8cWjl5jKxV/zYfWuQWofRMhOTq/XNcI6LV4XCCMp6wBKESpAklegvDXRGeN7N0/CvoVc03KEnEPRkeMAVNhqDWCCsJQlB8IiXIodDCQSOHFVN5955sXxj912ffvMlUxXXLECsjwsZ9Z+Lwg3Wn4QaOF4c0osSTUMQbBohCbEXdQAiLU1oAo6IgluqJ4gaiN+m8aKlaFC0lRQYh1uOpFkjV6BTpijE1Wvl/6X3nnr4Gdfe9P336lHv3Vs9d+Aq3gb3r8e11qCFVhPKhzHpngj58lVFDKFW849YdCStwXpMB3AWBTYDjk3Qp/me2xdkBXMGsBSct9wzlauPwDvuhVqvaKpiiuCoU+8MLwFtOXnfRO6TvAzeOUSuNoL3ITQGIGZFhUbIqGB4NkTAJRUKyPgVfEWJZLkS1Ag6wIfLRUoSq1DME5Oge5ZHb7s6rXPfSeLu+/WhRN3HOn9hbOrk+9DAVe3gHBSdnUUG/Ri/ag6AikeqT6YCyhmJth1QFtCzili0ox4OYjNIDQa30Io6hA7U0kMSZVQFhoko8Xb//7YifFd6grWlmEoW4u//8Lwe4EIFpeK5CeXuumtrIAYXnhThJNMXMAjmqMma5NA2Ig+Lud5SG8SBEbWcYg4vDIBDCJEhZR6OJZFErtcIiQf0QeE5M+OpieSlb2333+//hOn3x57bvXF5XZ6uJa2PrwMIQdK1WhNqiIlVyQ9Yc/Pe4DFy+CquH+yf/AWdsiQ6IHssN/9C6nJMyP7KBGeUPwpOK/ie1h+bVQ9f3bsP4c9z5ueNAAAEABJREFUjsKw+/l779VbGpHccgj66gvr70Jx+HN7cnOoU9guqyN2/ArUrG3gfDF5FS2LaKaP2zq3rsMaixnCnnlBltsGIceoxQ7yA0/CDgkUiO6k6mbcFmKxVVLAAW46HDv+y5sQPtcLF8sKPlLu7aQ5wC4LKC2NhapGcreC6RdbBAtWQALCXEDvOQShf7wYCV1lCfGpgBLoEq6KtQz6z5LTYxcNPdN2cuM+5X5qWDZnyoX1p3D531FbWFtWAIiZG/u5uRY4uQN6waQEeljs67GUr+aMIu4PiMIgVjL+oipG6JlWG9UwVATh92FFgJ0SdgAxUSuEQO+hIpSUtTaMAUVOrVfPwSCzze4Rdt958ux49p437SEBwu4DCFbHbowGc6paTKaQn3gaPINbZmGBnoMIGxBYtYGn2wW7CBB+LU0eNn5YvEkyJtqmApDrGdI6EMyB1ZG7UW1RAVvKAWQaE23QzzJJBrnN3VBgJ4VOE2Iu4JgHkxwLKLKiN+xr62vAtpVsR2LzHShlGXTvcgcUHRrhE/RhWfAAWSgyayAHpNu+znEqE5r1uslzINjN7hPCawMCpaeHdRhCsS+vzdQYp2J/lwl1CGECSkkrkt7A2+C4IuExkxULyD93bQ/kksxySdeH8JPoTs2LRRmzw+I5cCx1gY6EPqS2uLbkAU8+ubbgWnoZpBlJMulEcVONj5uLFaOwi5Js6abs/fJ7Sz2rzo3AgCZK4j/z7RBgGjSkACUWY4D7aKZ4ycmglGmVFTpbY8DA3h404De7z6W2zWvXmOMXx+pAJ5VEd2ZcS2gbFGy6GKlqSwvPUEFqDc4AkHxLEPf29VMxNt8QMsMwGspdC9Hkg2hAOS0GR6UqDsqjp5euTJvr/wANqbcc2bO62b1uWgG/+4crN6wp/85WMB9kcUmIhlAhJsMhKy4SWkA+EmLKmkHEIyEHCZhsM960vyV9Ybb8zoDlF85daUm8TMQggYhgoQjylCGgbVwwF6P3qFFrpJvdaw+s2kVT2S4sYhF7GtIYcEYmz1RbCBzwEiGf1ISEHPzv8HJBMk5oE+6YEFU3ka4Oc5aPi14+LcX6A6gKGXcB96VxOgake6upef8Tx1YfvRuobDN73bQC0NPugsP5oUFh7yKJRoxPkNI0DnWsDhmb6YiKEDRgmoz8CN0r8NIqaWxkSLdUQAftMsLVly+UihQF4zKRYoovIqELHKVu8ZFezEwX9xa62eajZQchAR5jSiIq2QMKKUt46zWbzBQuuXEqnwI+uJDqRQRWBuQGe2GkaVyEw0R2EnaiYoRZQS4PJbiMrDY0LCVNVuiyY+3tLnUfr0NyHF/dXgUst/Y8d75ee3y9rN+aWzvA5iw5FPa6yY/MAuMgsEYVxE2ZfFmFkk8n/KMXMDQxzFDY4P9BpeWeFPCkSdSFMTA/6GgypexUCqMJwQ/QMYP16zRTm26CEI0dXmip1QnrCI2OlyPiCiWKxcmsUovdLFzTzzVYEY4/Sj5y86KRATAV5lNIIsRMwz0F9JCI/xlnkZBrUQb3Cu5DXASnaqCUCd57fsGcfXqze920Am64QZWnj4X/VUbFfwziW8BGLZ2YlEMDd3YoEcFlmU7LXEpc6EjS8sjtKLpFCHMIh99aQBkgzFQH5A4YyHB6tVLfOL2uIgIyQhW0oKA0Y+9Wb7pmQcWN+I14Bvuo8Q/mGCR06YDdsa+nrl8sGLlF2IBqIkwZywoR3czfiCcLAiTka5KjpgQKgfWC3IeROoUsmJ6goHsIUe/hL/z6TZuuBTatAFafj4TwO+nx88/CSx/oZOmADzwAUPDGZAuxigSTEJzpAT+z0GFiq5roCdw0YymgODq00pnSNV0eCIQ3gsa8KoS4C2oZHPVyO5GeLXNNkdtNK4AVOI9h2NsH10khNFAgmhXxQTSDKDjpfoXI82TkeSKgExeQCQ7HuBLZU353bVLxXkHgcRqDZTKPJdcdGHcDbGXSaSX/tlnpnTh6dPPTdFuCoffDzep8dNE7/zR4EEc0QxxN/of8DUt0lPSaQu5CmAwFBUxcq1gjvNa4zDwvMCw1MjHnGWb0AHgTIU5zeBYy10vdTPoH1m5+q4K+UkLdHESfJQ+kSY23mWOSSMq5OfnGfQQRurpk9X7+s0CuQrGJnobF+RJFSEsAAd0GMqUbT/IgEjigtZdmvj6z1Up4y1zQ/UeOzBrtPlUkeihTJTQasQwv/fV9C5kedKJjSUGLz3OEENAq5NIjnqb1OYYWI/FWmvdSmxl9ZF+HRJ0UQtU8CfbahiFg0wsFYOgirBGrM1kS45Pjf/OBnrQdI80R5sYgUw/S/cLdSB3AKpgKlAgVJQQYnerrllq8H+GN5IEPFatjAAs4f/3Jd9y0uOUu2ZYrYQa7x54d5in9D+077i9JOD8TNMr00M859xmNiVBUHl4R+ABvMUQ45CipEPxOOrhj1cq652MximNVrUzrOw91RCCItwEphGfg7NCml1DPTEM4rtdKVRfM3LVLueLJiN6kCaOCxHuGmoIIK7Yf1EZRyf2EeaNexZylwWWFPqgTdM4C4bbWMW/AsbI8S+fmprZETW9ZAcwF3zg+XGN7lKEF/D1KdlAJjIu44yGQDPMlb4JCpOXxpwB8EmNEGUnsMDEvMwfwZiTmBnlfp3JzKKjQGuTdoBjSMYlvbgndgddCN7KYbg5HXZjD4xCxP3/NhVYIonw/j/9S8eJzIqFapniD3DepdDizPoRCjW1UNa+MAUWzxVY6VFsUPtdl9QPaPd+B0ITlJdZWMvFsJJ7z6RM29HKZrmJHSctmE2nnxS0K4E68DMKGel4Zm3nJryIUpNcwp2gRqFTOW9hh5JzcvIjideGsonQqm2MmTKT8TpHGWqCeW33ke+LVmCOkpWmi0thuSyVUadLSwuISnRGL45hNV+qvXZelgJZJ9miBvloEtjql9TcSz/M0bpJWLMOuCdt+CC81FdTIBFWKGy3mZF0blepFxCoqgTdE5fEYxuFLUFDWFpnzMDdHmXiLU29UQiP5J+acxZ4Vz6td5PmjfUSF8fvOG5lp0vHqApmp0yGgEJP4gM9R6UjsgRM6qK5GCOIarfnH24UaK5k0sdJenIJIcxJ2WJWgxYi7oleA0QRHFYR7pIAbZOyKPoAOmC6pCDPnj3xUmNUbpaXQ1dKiMQxXXr90qnrb9ddkj/1xe3vpzIyMpIl93Cg65+M4A8etG+eiJ+pYB8gEXyMPC4jSNyY0KHi+N6qErgoybKBj4h20WNFr4b4ih00bk8doX/8Q9OizF/qzXN0G2WQMy44PNOAGYkwE5scNUvhMdigLWfb7XGZwJVlBkAkHYaV7X3snwWUjPDRzZobJgcIz85gdB9ohrFB/6KGHwuMf+cgfPRpYVvUD6MWJu4R5M57Wzmm6Evth9RqvIR087DFwAFe8QDpfWGyDcn8zFl6zOBiATmQQVBdzAypoHwor4IBOYFYn07tPvxSYB06rLawtKeDRJ8/uLyfN+1ra3oKbSGJsDSj5G3FZYm4munHtpJBnOCGel2YxvlcoNkNAB3Mcgf1XZDQKhl5Db+GNSuepjtbPR+X4mVEREiZpOPHud5/mU4zf8VFSJM/k+VPTFbmiDnO6QImg+YiNYMw5omJgWQFDyhqEE3yNTMcl8r1Z5eKIIk4ybSLFPpMhsjicxb4GjQbNJJVkdq5O997henn3bz1z7pfvu33fs2qTa9PQgtPPvshuheCvBaa/TkWiXCy3mD9VQlKNbhvEU+WBdz6WJAxjZiJqaNjodhwRdGZc8eac5A4qQJJcIo+8xEeFONoSIqFHb88b/z8PHjw4/aP2CME3i63W/w7qEl0vsJMNHnoa6wvmKE7jsQ9A0nAiwoyojZ2wZj6GQkNgQ58FoqiSsBlpr24k6SL2ore2MW2BTSLq3jxzzYGy1vdu5VHXTXsAp5+/9s3Vl0sTLrYKO/IbkmEyRZEVmYI5jo4DtyjMiLljFUxNxwmdIN0vVsgskGid+LYkvBTZkl6VygAVc0W0fkJQ8nMHD/Yu/EkjIHv2qGE9f9q+LIN4EzkgVO7indw0Ey77FRWKNCb/hlbtYijiPqn8cRWtngMBpENoHHwkh3YEofFJnyBJQQxRBbSV0WXQJwtjn775Zl2pTa4thSA9HLyc94Zfb2fZIluQTEKplhksibZabzTREZpUhJ3CubAihVRohcwFPsQkVzZabmg6YWLjH3CQQS45DxocajitY7lPRAVD3sz8Db8zLd0art3amP3hTI+k4cbPh7PYH46oR88f1ONeV6eNhEYqrZ4XZNxP7FnH+xL+X6lYrzCv6Yj20H5+pTDTRw9393xTbSEZb4mKIM/x8K/+69/PivQUhSL90fmDRrWMbcByIGgiomb+/JZEb0bIjaa7lPGx8T0qGzmmlOGrBkLhJHIjJJ4RwiwKxsSdPr/5nYZvmLmwGpn1jWBhKpbvRNAT7JHKWZeJ7CYinlIAhOxPwqvYdizOZi4qs750X8xvSsNOBHKDMX/1vrv2PnzkiJ6pLawtc0FHjx71JrXyyIsEZhVrAS0ThbhB8kIbVWcURiwYYxiVpCqFDT6Z1BQAXT2OsjOZy58wQF1BJMLwICmBvRKrvrrZPeL7j6G/K2CHOYUWzZ7zhGMwODen8egBrNo5qUHjkQnuiI8iDN7Yvo4oikzoZD7QRU+O3hA9WscRiepyHty4vMGs4FY3EEYthQqbLtESGF9oXc1c4AWTK90YMaSFuM9pt6AiCxrmoaiZM5MbxVasQlmMBZlEAz5vLjbNZza7vfXS/CLyZUm21UpCjx7o5y/y+vUlkBri2DOu38b+Cg6X6tjFK+ZFpQxloQlDL+HvIHrFQ3kPQmsYGfvakuVvrMsqxHCx89Q6rTPF1Us1nzLDrroQGGdwchH+PE9YsZVL8/Zs90kcnZ9DLN1ueIiJ7UsqFLi8ldtQG/2pA2n+5Gb3t9zWr6BB/rdbRfJ5ggX2LRpokyHdWi9GEEdf5hMOLs7mcegIqUjQmNoYSRcOCsejiCPRSBQlnJWJyiVAmI//XdbTk5elAOPSM2jDyEyATPmH6KZ+zo+3k1jCEwJyxEQsKY1TB9yw8PA6TiBT4OgLe7yALIJmLVFk8enFPDfeWfP48Sf0z6gtroXC/icUWR/udZIPppW3yC2az1QSVEZKWlqJ9GLNAq2WYivyQNbHopAoKqZteEcSH9ijezLEkiZMTXz8igvbf05dxrosBZw/qU5fe60CdgldJtGpFDpOBnLDvNPE1xq4nzw+Fak6OoESgmDxzMQRj9h7pVI4ysyENrd+QKsMDZ+ZsUe7Rn0ayX/Lf4xPirEQ/srYqwc7bft5WGtuTCMDtsIfei8sDvc7bWIDPpkH5ErFhM2Ckck3l/pEcVzj26M2guacsL10lFGdbLoP/Np1WQoAzi2nE/cqeJsuXTE+3BbhHYVNpCNTyE2Mpeiqq4QEHJ+YgMV3Okb+XgQSmPztSSkkBHoAAAMFSURBVBMtz5M0Qux+ETf5X8bBPbRgk6+rK1hz2PrFs7PZV/t5/iDC4wew2beB3En9BjGHfeaIic2ctpbc1OiYdJsgIy2cJy2kV2HmJKOSyp7FnJauoB5e01Wn1GWsyx9PN+ElxMoj3JB0kBQ3F5sqHCnhI0CtnFk+9gPsvG7o5Glot8iS2otw76cQxU6GRH+9UuaJulLP/OKn1dmt9FQ3s/YXBSHsP+frRAgLval/M67/VhvCn0fpcThX+lYE8UOcdRpNay11ilLxgcKOvYTwLP+wx7xFFsdt5nmAf2bhMh9dvWwF1Dp8DVz4fbAqzXn7kQvzhBsFn6NhxvDD6eMC8aXfkm5ZaLXTlSYJnzib2i8e0fqykMOVLFyTU2u/N399lu/xweu1prkP/ehfgYD3Q9wW8V230/kjTY40C1ukKo7VQOi4H8Vp7k6RoCJzj6vLXFsk2b+9zo1GB/pZ8dx01HRWxw0a1o1ga2n54bRMaCTb+vBfTswVhZ2gmfxjVd/+16v9d9k2u54NIV+auL+I6u1XEKKW6A38A1OkJZgPmJgJq/mkZx8N+6VOprq9tJ44c9tCobdQKH57XbYCuCbO/SNThX8xXK84DREHckMksogm+KwA+rE+yfR/A+vyT7HpY+oNsF4djw928/yn3Mz/CDgjO5xAEU1sVabC+spALp93RiLQn20lyd9Rl7muSAHYUIaK9ZcALj6KIsVWSGZCjjO58k8RJObJOg0/v5CmX9iJPwl5pWtlWr8H+eFoVft3ob2ZxAo56IxDvUSkufk/s5H9a0tLeqguc12RAjbW6fVwe68InwVs/y4OFaOH8Xvgcz6x1M4eVX8G1snh7M3d1PwM6pkPIc+ljdLHVifuxw90ky9f6Z8/3hYFcM1p2fRpoOE779w8HftGWvyzm/hh/hkwyNFt8uhtU8Duury1+3/gsMNrVwE7vHYVsMNrVwE7vHYVsMNrVwE7vHYVsMNrVwE7vHYVsMNrVwE7vHYVsMNrVwE7vHYVsMNrVwE7vHYVsMPr/wEAAP//75ZIqQAAAAZJREFUAwDGSpSEZ7HahQAAAABJRU5ErkJggg==";
 
-const BUILD = "3.13";
+const BUILD = "3.14";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1544,6 +1544,7 @@ function drugHistory(courses, days) {
       note: c.outcomeNote || "",
       route: c.route || null,
       easedDay: eased.length ? Math.min(...eased) : null,
+      betterDay: c.betterDay != null ? c.betterDay : null,
       clearedDay: cleared.length ? Math.min(...cleared) : null,
       taken: want ? Math.round((done / want) * 100) : null,
     });
@@ -1551,6 +1552,7 @@ function drugHistory(courses, days) {
   return Object.values(byDrug)
     .map((g) => {
       const eased = g.courses.map((c) => c.easedDay).filter((x) => x != null);
+      const felt = g.courses.map((c) => c.betterDay).filter((x) => x != null);
       const taken = g.courses.map((c) => c.taken).filter((x) => x != null);
       const tally = { resolved: 0, partial: 0, failed: 0 };
       g.courses.forEach((c) => c.outcome && tally[c.outcome] !== undefined && tally[c.outcome]++);
@@ -1559,6 +1561,7 @@ function drugHistory(courses, days) {
         n: g.courses.length,
         easedMedian: eased.length ? median(eased) : null,
         easedN: eased.length,
+        feltMedian: felt.length ? median(felt) : null,
         takenMedian: taken.length ? median(taken) : null,
         tally,
         rated: tally.resolved + tally.partial + tally.failed,
@@ -4562,7 +4565,7 @@ function GlassStats({ days, date, regimen }) {
 /*  Today view                                                         */
 /* ------------------------------------------------------------------ */
 
-function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning, onFold, onNote }) {
+function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCourse, deleteCourse, editCourse, setCourseDose, onSetup, addTag, addCustomSymptom, deleteCustomSymptom, setStatus, clearDay, onShareEpisode, deleteTag, addPrnMed, deletePrnMed, addCustomDrug, deleteCustomDrug, setCourseOutcome, setCourseNote, saveCourseReview, addLocation, setAqi, setRegimen, setTab, setRescue, setQuestions, onDismissWarning, onFold, onNote }) {
   const day = state.days[date] || emptyDay();
   const isUnwell = day.status === "unwell";
   const logged = !!day.status;
@@ -4651,6 +4654,18 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
     const ce = addDays(c.startDate, c.days - 1);
     return ce < date && diffDays(ce, date) <= 14;
   });
+
+  // A flare is usually treated with two or three things at once, so courses that
+  // ended on the same day are offered as one review rather than three in a row.
+  const reviewGroups = useMemo(() => {
+    const by = {};
+    finishedCourses.forEach((c) => {
+      const end = addDays(c.startDate, c.days - 1);
+      (by[end] = by[end] || { end, courses: [] }).courses.push(c);
+    });
+    return Object.values(by).sort((a, b) => (a.end < b.end ? 1 : -1));
+  }, [finishedCourses]);
+  const [reviewing, setReviewing] = useState(null);
 
   const lastPF = useMemo(() => {
     const keys = Object.keys(state.days)
@@ -5329,6 +5344,20 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         </div>
       )}
 
+      {reviewGroups.map((g) => (
+        <div className="remind" key={g.end}>
+          <span className="txt">
+            {g.courses.length > 1
+              ? `${g.courses.length} medications finished`
+              : `${g.courses[0].drug} finished`}
+            <small>
+              {fmtShortYr(g.end)} · {g.courses.length > 1 ? "review them together" : "did it help?"}
+            </small>
+          </span>
+          <button className="btn sm pri" onClick={() => setReviewing(g.end)}>Review</button>
+        </div>
+      ))}
+
       {pfDue && tracks("peakFlow") && (
         <PeakFlowReminder
           lastPF={lastPF}
@@ -5347,6 +5376,14 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
       {/* The rescue pack is a list you keep, not something to log, so it lives on
           Report next to the backup and the plan rather than opening the day. */}
+
+      {reviewing && reviewGroups.find((g) => g.end === reviewing) && (
+        <CourseReview
+          group={reviewGroups.find((g) => g.end === reviewing)}
+          onSave={saveCourseReview}
+          onClose={() => setReviewing(null)}
+        />
+      )}
 
       {isUnwell ? (
         <>
@@ -5888,6 +5925,141 @@ function Expand({ title, children }) {
   );
 }
 
+// A course that has finished but never been rated is the one gap the log cannot
+// fill by arithmetic: whether it actually worked. This asks once, shortly after
+// the course ends, while it is still answerable.
+//
+// Courses that finished on the same day are offered as one review, because a
+// flare is usually treated with two or three things at once and nobody can say
+// which of them did the work. Rating them together is the honest default; rating
+// them apart is there for when you genuinely can tell.
+function CourseReview({ group, onSave, onClose }) {
+  const many = group.courses.length > 1;
+  const [apart, setApart] = useState(false);
+  const [shared, setShared] = useState(group.courses[0].outcome || null);
+  const [each, setEach] = useState(() => {
+    const o = {};
+    group.courses.forEach((c) => (o[c.id] = c.outcome || null));
+    return o;
+  });
+  const [better, setBetter] = useState(
+    group.courses[0].betterDay != null ? String(group.courses[0].betterDay) : ""
+  );
+  const [note, setNote] = useState(group.courses[0].outcomeNote || "");
+
+  const save = () => {
+    onSave(
+      group.courses.map((c) => ({
+        id: c.id,
+        outcome: apart ? each[c.id] : shared,
+        betterDay: better === "" ? null : Math.max(0, Math.min(60, Number(better))),
+        outcomeNote: note,
+        reviewedWith: many ? group.courses.map((x) => x.id) : null,
+      }))
+    );
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="modal" role="dialog" aria-modal="true">
+        <div className="modal-head">
+          <div>
+            <span className="wordmark">Clear</span>
+            <h3>{many ? "How did they go?" : "How did it go?"}</h3>
+          </div>
+          <button className="modal-x" onClick={onClose} aria-label="Close">
+            {"\u00d7"}
+          </button>
+        </div>
+
+        <div className="note" style={{ marginTop: 14 }}>
+          {group.courses.map((c) => c.drug).join(", ")} · finished {fmtShortYr(group.end)}
+        </div>
+
+        {many && (
+          <div className="btnrow" style={{ marginTop: 12 }}>
+            <button className={"btn sm" + (apart ? "" : " pri")} onClick={() => setApart(false)}>
+              Rate together
+            </button>
+            <button className={"btn sm" + (apart ? " pri" : "")} onClick={() => setApart(true)}>
+              Rate separately
+            </button>
+          </div>
+        )}
+
+        <div className="rowlab" style={{ marginTop: 16 }}>
+          {apart ? "How each one did" : many ? "How the combination did" : "How it did"}
+        </div>
+        {apart ? (
+          group.courses.map((c) => (
+            <div key={c.id} style={{ marginBottom: 12 }}>
+              <div className="note" style={{ marginBottom: 6 }}>{c.drug}</div>
+              <Seg
+                options={OUTCOMES}
+                value={each[c.id]}
+                onChange={(v) => setEach((o) => ({ ...o, [c.id]: v }))}
+                small
+              />
+            </div>
+          ))
+        ) : (
+          <Seg options={OUTCOMES} value={shared} onChange={setShared} small />
+        )}
+
+        <div className="rowlab" style={{ marginTop: 18 }}>
+          Days before you felt better
+          <Info title="Days before you felt better">
+            <p>
+              Counting from the first dose. Leave it blank if it never really turned a corner, or if you cannot
+              remember — a guess written down as a fact is worse than a gap.
+            </p>
+            <p>
+              The app already reads a day out of your symptom entries. This is your own answer alongside it, and
+              the two are shown separately rather than merged.
+            </p>
+          </Info>
+        </div>
+        <div className="btnrow">
+          {[1, 2, 3, 4, 5, 7, 10].map((n) => (
+            <button
+              key={n}
+              className={"btn sm" + (better === String(n) ? " pri" : "")}
+              onClick={() => setBetter(better === String(n) ? "" : String(n))}
+            >
+              {n}
+            </button>
+          ))}
+          <input
+            className="inp"
+            type="number"
+            inputMode="numeric"
+            style={{ width: 82 }}
+            placeholder="other"
+            value={better}
+            onChange={(e) => setBetter(e.target.value)}
+          />
+        </div>
+
+        <div className="rowlab" style={{ marginTop: 18 }}>Anything worth remembering</div>
+        <textarea
+          className="inp"
+          rows={3}
+          placeholder="Side effects, what you would ask for next time"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+
+        <div className="btnrow" style={{ marginTop: 16 }}>
+          <button className="btn pri" onClick={save}>Save</button>
+          <button className="btn" onClick={onClose}>Not now</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // The shape of your own run-up, averaged over every episode you have logged.
 function RunUp({ days, episodes }) {
   const LANES = [
@@ -6127,6 +6299,10 @@ function DrugHistory({ courses, days }) {
               <span>
                 <em>{r.easedMedian != null ? `day ${r.easedMedian}` : "—"}</em>
                 eased by
+              </span>
+              <span>
+                <em>{r.feltMedian != null ? `day ${r.feltMedian}` : "—"}</em>
+                you felt better
               </span>
               <span>
                 <em>{r.takenMedian != null ? `${r.takenMedian}%` : "—"}</em>
@@ -7108,7 +7284,7 @@ function PrintDoc({ state, episodes, from, range }) {
           <h2>Antibiotic history</h2>
           <table className="ptab">
             <thead>
-              <tr><th>Drug</th><th>Courses</th><th>Symptoms eased</th><th>Doses taken</th><th>Cleared it</th></tr>
+              <tr><th>Drug</th><th>Courses</th><th>Symptoms eased</th><th>Felt better</th><th>Doses taken</th><th>Cleared it</th></tr>
             </thead>
             <tbody>
               {drugs.map((d) => (
@@ -7116,6 +7292,7 @@ function PrintDoc({ state, episodes, from, range }) {
                   <td>{d.drug}</td>
                   <td>{d.n}</td>
                   <td>{d.easedMedian != null ? `day ${d.easedMedian}` : "—"}</td>
+                  <td>{d.feltMedian != null ? `day ${d.feltMedian}` : "—"}</td>
                   <td>{d.takenMedian != null ? `${d.takenMedian}%` : "—"}</td>
                   <td>{d.rated ? `${d.tally.resolved} of ${d.rated}` : "—"}</td>
                 </tr>
@@ -7123,8 +7300,10 @@ function PrintDoc({ state, episodes, from, range }) {
             </tbody>
           </table>
           <p className="pline">
-            Symptoms eased is the first day a symptom present at the start of a course was recorded lower. Doses
-            taken is the proportion of the prescribed doses that were logged.
+            Symptoms eased is the first day a symptom present at the start of a course was recorded lower, read
+            from the daily entries. Felt better is the patient's own answer given when the course ended. The two
+            are kept apart rather than merged. Doses taken is the proportion of the prescribed doses that were
+            logged.
           </p>
         </section>
       )}
@@ -8041,6 +8220,17 @@ function App() {
     }));
   }, []);
 
+  // one review can settle several courses at once
+  const saveCourseReview = useCallback((rows) => {
+    setState((s) => ({
+      ...s,
+      courses: s.courses.map((c) => {
+        const r = rows.find((x) => x.id === c.id);
+        return r ? { ...c, outcome: r.outcome, betterDay: r.betterDay, outcomeNote: r.outcomeNote, reviewedWith: r.reviewedWith } : c;
+      }),
+    }));
+  }, []);
+
   const setCourseOutcome = useCallback((id, outcome) => {
     setState((s) => ({
       ...s,
@@ -8360,6 +8550,7 @@ function App() {
             onNote={setNoted}
             addCustomDrug={addCustomDrug}
             setCourseOutcome={setCourseOutcome}
+            saveCourseReview={saveCourseReview}
             setCourseNote={setCourseNote}
           />
         )}
