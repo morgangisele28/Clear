@@ -325,7 +325,7 @@ if (await eps.count()) {
 
 await click("Patterns");
 await page.waitForTimeout(1400);
-await card("Everything together", "timeline");
+await card("Side by side", "timeline");
 await card("Days between episodes", "gaps");
 await card("Episodes a year", "yoy");
 

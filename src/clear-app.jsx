@@ -184,6 +184,9 @@ const CSS = `
 .sheet.from-left>*,.sheet.from-right>*{animation:none;}
 .scrim{position:fixed;inset:0;z-index:80;background:rgba(8,54,69,.55);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadein .25s var(--ease) both;}
+/* these open from inside headings that are set in the display face, and a sheet
+   is a DOM child of the thing that opened it, so it has to state its own font */
+.modal,.modal p,.modal li{font-family:var(--body);}
 .modal{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:720px;margin:0 auto;
   background:#fff;border-radius:26px 26px 0 0;max-height:86vh;overflow-y:auto;
   /* the tab bar sits over the foot of the sheet, so the last paragraph needs room to
@@ -582,7 +585,7 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .dbar i.partial{background:#E3B341;}
 .dbar i.failed{background:#D98A80;}
 .dnote{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--muted);}
-.chart .ct{font-size:10px;font-weight:500;fill:var(--muted);font-family:var(--body);}
+.chart .ct{font-size:11px;font-weight:500;fill:var(--muted);font-family:var(--body);}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
 .note{font-size:12px;color:var(--muted);line-height:1.65;}
@@ -991,7 +994,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.7";
+const BUILD = "3.7.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -5407,10 +5410,9 @@ function YearOnYear({ episodes }) {
   );
 }
 
-// Everything on one date axis, in its own lane, with episodes shaded straight
-// through the stack. It draws no conclusions and reports no statistic — it puts
-// the series next to each other so the reader can see for themselves whether
-// anything moves together, which is the honest version of "compare two things".
+// Every measure on one date axis, in its own lane, with episodes shaded straight
+// through the stack. It reports no statistic: it puts the series next to each
+// other and leaves the reading to the person whose body it is.
 function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
   const today = todayISO();
   const dates = useMemo(() => {
@@ -5433,17 +5435,20 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
   );
 
   const tracks = (k) => !track || track[k] !== false;
+  // Straight out of the app's palette, and semantic with it: sputum keeps the
+  // colours of its own scale, what your body is doing is coloured, and the
+  // weather around you is grey.
   const LANES = [
     { key: "sputum", label: "Sputum colour", lo: 0, hi: 7, kind: "sputum", on: true },
-    { key: "symptoms", label: "Symptom load", lo: 0, hi: null, kind: "area", col: "#C2833A", on: true },
-    { key: "care", label: "Airway care", lo: 0, hi: 100, kind: "line", col: "#4E9E5F", on: true },
+    { key: "symptoms", label: "Symptom load", lo: 0, hi: null, kind: "area", col: "#AC252B", on: true },
+    { key: "care", label: "Airway care", lo: 0, hi: 100, kind: "line", col: "#2F7A57", on: true },
     { key: "peak", label: "Peak flow, % of best", lo: null, hi: null, kind: "line", col: "#057BC1", on: tracks("peakFlow") },
-    { key: "aqi", label: "Air quality", lo: 0, hi: null, kind: "line", col: "#8A7BB8", on: tracks("aqi") },
+    { key: "aqi", label: "Air quality", lo: 0, hi: null, kind: "line", col: "#7E8E96", on: tracks("aqi") },
   ].filter((l) => l.on && series[l.key].filter((v) => v != null).length >= 3);
 
   if (!LANES.length) return null;
 
-  const W = 640, L = 4, R = 4, LH = 46, GAP = 17, TOP = 14;
+  const W = 640, L = 4, R = 4, LH = 54, GAP = 20, TOP = 15;
   const iw = W - L - R;
   const H = TOP + LANES.length * (LH + GAP) + 14;
   const x = (i) => L + (dates.length === 1 ? iw / 2 : (i / (dates.length - 1)) * iw);
@@ -5485,31 +5490,26 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
     };
   };
 
-  const SPANS = [{ v: 90, label: "90d" }, { v: 180, label: "6m" }, { v: 365, label: "1y" }];
+  const SPANS = [{ v: 30, label: "1m" }, { v: 90, label: "3m" }, { v: 180, label: "6m" }, { v: 365, label: "1y" }];
 
   return (
     <div className="card">
       <div className="card-t">
         <span className="ttl">
-          Everything together
-          <Info title="Everything together">
+          Side by side
+          <Info title="Side by side">
             <p>
-              One date across the bottom, and every measure you keep in its own lane above it. Shaded columns are
-              episodes; the bars underneath are antibiotic courses.
+              One date across the bottom, every measure you keep in a lane above it. Shaded columns are episodes.
+              The bars underneath are antibiotic courses.
             </p>
             <p>
-              It is here so you can see whether things move together, which is a question only you can answer about
-              your own body. Deliberately there is no correlation figure attached to it.
-            </p>
-            <h4>Why no number</h4>
-            <p>
-              With this many measures there are around two hundred possible pairings, and roughly ten of them will
-              look convincing by chance in a log with nothing real in it at all. A number would make coincidence
-              look like a finding.
+              Lanes with only a few readings show a dot for each one, so a weekly measurement does not read as a
+              continuous line.
             </p>
             <p>
-              Reading it the other way round is safer: pick something you already suspect, and see whether the
-              picture supports it.
+              There is no correlation figure here. Across this many measures, chance alone produces convincing
+              pairs, so a number would mislead more often than it helped. Start from something you already suspect
+              and see whether the picture supports it.
             </p>
           </Info>
         </span>
@@ -5525,8 +5525,8 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
               y={0}
               width={Math.max(1.5, (b.b - b.a + 1) * bw)}
               height={TOP + LANES.length * (LH + GAP) - GAP + 4}
-              fill="#F2C9C0"
-              opacity="0.5"
+              fill="#AC252B"
+              opacity="0.10"
             />
           ))}
 
@@ -5565,9 +5565,10 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
                           strokeLinejoin="round"
                           strokeLinecap="round"
                         />
-                        {/* a sparse lane is a handful of readings, and the dots say so
-                            rather than implying a continuous measurement */}
-                        {sh.pts.length <= 45 &&
+                        {/* dots mark individual readings on a lane that is sampled
+                            rather than kept daily — by density, not by count, or a
+                            month of daily entries would be beaded from end to end */}
+                        {sh.pts.length <= dates.length * 0.5 &&
                           sh.pts.map((q, i) => (
                             <circle key={i} cx={q[0]} cy={q[1]} r="2" fill={lane.col} />
                           ))}
@@ -5586,8 +5587,7 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
               width={Math.max(2, (r.b - r.a + 1) * bw)}
               height={5}
               rx="2.5"
-              fill="#0C6E9B"
-              opacity="0.8"
+              fill="#057BC1"
             />
           ))}
           <text className="ct" x={L} y={H - 1}>{fmtShort(dates[0])}</text>
@@ -5596,8 +5596,8 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
       </div>
 
       <div className="legend">
-        <span><i style={{ background: "#F2C9C0" }} />episode</span>
-        <span><i style={{ background: "#0C6E9B" }} />antibiotics</span>
+        <span><i style={{ background: "rgba(172,37,43,.14)" }} />episode</span>
+        <span><i style={{ background: "#057BC1" }} />antibiotics</span>
       </div>
     </div>
   );
@@ -5620,18 +5620,16 @@ function DrugHistory({ courses, days }) {
           <Info title="What has worked">
             <p>Every course you have recorded, grouped by drug.</p>
             <p>
-              <strong>Eased by</strong> is read out of your day-by-day entries: the first day a symptom that was
-              present when you started the course was rated lower. It is not something you were asked to judge
-              afterwards.
+              <strong>Eased by</strong> is the first day a symptom present at the start was rated lower, read from
+              your entries rather than judged afterwards.
             </p>
             <p>
-              <strong>Doses taken</strong> matters as much as the outcome. A drug that looks like it failed on
-              sixty per cent of the doses has not really been tried.
+              <strong>Doses taken</strong> matters as much as the outcome. A drug that failed on sixty per cent of
+              its doses has not been tried.
             </p>
             <p>
-              These are your own courses in your own body, and there are only a handful of them. Nothing here
-              adjusts for how ill you were each time, and a drug kept for the worst episodes will look worse than
-              one used for mild ones. Take it as a record to discuss, not a ranking.
+              Nothing here adjusts for how ill you were each time, so a drug saved for the worst episodes will look
+              worse than one used for mild ones. It is a record to discuss, not a ranking.
             </p>
           </Info>
         </span>
@@ -5679,8 +5677,8 @@ function DrugHistory({ courses, days }) {
 
       <div className="note" style={{ marginTop: 12 }}>
         {enough
-          ? "Read the dose column alongside the outcome. A course you only half took has not been given a fair run."
-          : "One course each so far. This gets useful once you have taken the same drug more than once."}
+          ? "Read doses taken alongside the outcome. A course you only half took has not had a fair run."
+          : "One course each so far. This gets useful once the same drug has been used more than once."}
       </div>
     </div>
   );
@@ -5713,9 +5711,8 @@ function LeadTime({ days, episodes }) {
       <div className="card">
         <div className="card-t"><span>How much warning you get</span></div>
         <div className="note">
-          Once three or four episodes have been through the log, this works out how many days your sputum and your
-          peak flow moved before each one started. That number is worth knowing: it is the difference between
-          ringing your team and waiting another day.
+          After three or four episodes, this shows how many days your sputum and peak flow moved before each one
+          started — the difference between ringing your team and waiting another day.
         </div>
       </div>
     );
@@ -5728,18 +5725,15 @@ function LeadTime({ days, episodes }) {
           How much warning you get
           <Info title="How much warning you get">
             <p>
-              For each episode the app walks backwards from the day it opened, and counts how many days running
-              the measure had already left your settled baseline.
+              For each episode, the app counts back from the day it opened and reports how many days running the
+              measure had already left your baseline. It stops at the first normal day, so this is the run leading
+              straight in.
             </p>
             <p>
-              It stops at the first day that was back to normal, so what you get is the run leading straight into
-              it rather than any blip in the fortnight before.
+              Your baseline is the median of your well days over the previous four months, taken separately for
+              each episode.
             </p>
-            <p>
-              Baseline is the median of your well days over the previous four months, worked out separately for
-              each episode so a slow change over years does not flatten it.
-            </p>
-            <p>This describes what already happened. It does not predict the next one.</p>
+            <p>This describes what happened before. It is not a forecast.</p>
           </Info>
         </span>
       </div>
@@ -5753,8 +5747,8 @@ function LeadTime({ days, episodes }) {
         </div>
       ))}
       <div className="note" style={{ marginTop: 11 }}>
-        Only episodes with enough settled days logged beforehand are counted, so this can be based on fewer
-        episodes than you have had.
+        Episodes without enough settled days logged beforehand are left out, so this may count fewer than you have
+        had.
       </div>
     </div>
   );
@@ -5867,9 +5861,8 @@ function TrendsView({ state, episodes }) {
   const days = state.days;
   const keys = Object.keys(days).sort();
   const today = todayISO();
-  // the timeline opens on six months: long enough for a couple of episodes to sit
-  // in it, short enough that a day is still a visible width on a phone
-  const [span, setSpan] = useState(180);
+  // opens on three months; a year of five lanes on a phone is unreadable
+  const [span, setSpan] = useState(90);
 
   const window30 = useMemo(() => {
     const arr = [];

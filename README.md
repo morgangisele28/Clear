@@ -56,9 +56,9 @@ This is generated from your log by arithmetic, not by a language model. It is a 
 
 ![A write-up for your team](screenshots/clear-store-07-handover.jpg)
 
-**Everything on one axis.** Every measure you keep, stacked in its own lane over a shared date line, with your episodes shaded straight through the stack and your antibiotic courses as bars underneath. Sputum colour, symptom load, airway care, peak flow against your own best, air quality. You can see whether things move together — which is a question only you can answer about your own body.
+**Side by side.** Every measure you keep, stacked in its own lane over one date line, with your episodes shaded through the stack and your antibiotic courses as bars underneath. Sputum colour, symptom load, airway care, peak flow against your own best, air quality. A month, three, six or a year.
 
-There is deliberately no correlation figure attached to it. With this many measures there are around two hundred possible pairings, and roughly ten of them will look convincing by chance in a log containing nothing real at all. A number would make coincidence look like a finding. It shows you the picture instead.
+There is no correlation figure attached to it. Across this many measures, chance alone produces convincing-looking pairs, so a number would mislead more often than it helped. It shows you the picture and leaves the reading to you.
 
 ![See what moves with what](screenshots/clear-store-07b-together.jpg)
 
