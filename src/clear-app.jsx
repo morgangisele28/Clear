@@ -1059,7 +1059,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.9";
+const BUILD = "3.9.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1199,7 +1199,15 @@ function migrate(raw) {
     return { ...c, amount: p.amount, unit: p.unit, freq: p.freq, freqText: p.freqText, note: c.note || "" };
   });
 
-  s.v = 5;
+  // Anyone who paused a treatment and resumed it the same day is carrying a
+  // frozen plan for today that no longer matches their regimen. Today's snapshot
+  // is re-taken on the next dose either way, so dropping it is safe; earlier
+  // days keep theirs.
+  if (fromVersion < 6) {
+    const t = todayISO();
+    if (s.days[t] && s.days[t].plan) delete s.days[t].plan;
+  }
+  s.v = 6;
   return s;
 }
 
@@ -7543,7 +7551,19 @@ function App() {
   const setQuestions = useCallback((q) => setState((s) => ({ ...s, questions: q })), []);
 
   const setRegimen = useCallback((r) => {
-    setState((s) => ({ ...s, regimen: r }));
+    setState((s) => {
+      const t = todayISO();
+      const next = { ...s, regimen: r };
+      // A day freezes the plan it was scored against the first time a dose is
+      // ticked, so that editing the plan later cannot rewrite past adherence.
+      // Today is still in progress though, so an edit made today has to reach
+      // it — otherwise pausing something and resuming it the same day leaves it
+      // out of today's care while the plan editor still shows it active.
+      if (s.days[t] && s.days[t].plan) {
+        next.days = { ...s.days, [t]: { ...s.days[t], plan: activePlan(r) } };
+      }
+      return next;
+    });
   }, []);
 
   const setTrack = useCallback((t) => {
