@@ -253,6 +253,11 @@ const CSS = `
 .weekrow{display:flex;align-items:center;gap:4px;margin-top:20px;}
 .wnav{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:rgba(255,255,255,.55);
   font-size:17px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:9px;}
+/* The arrows keep their full tap target but push their glyphs out to the edges,
+   so the week strip's leftmost ink lands on the same 20px line as the wordmark
+   above it and the glance strip below, instead of 10px inside both. */
+.weekrow .wnav:first-child{justify-content:flex-start;}
+.weekrow .wnav:last-child{justify-content:flex-end;}
 .wnav:disabled{opacity:.2;}
 .monthbtn{border:none;background:rgba(8,54,69,.24);color:#fff;font-size:9px;font-weight:600;
   letter-spacing:0.16em;text-transform:uppercase;padding:6px 12px;border-radius:99px;
@@ -1007,7 +1012,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.8";
+const BUILD = "3.8.1";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
