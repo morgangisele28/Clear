@@ -701,7 +701,7 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .saved{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#083645;color:#fff;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:9px 17px;border-radius:99px;z-index:60;}
 
 .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;padding:0 0 env(safe-area-inset-bottom);
-  background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);box-shadow:inset 0 1px 0 var(--hair);}
+  background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);box-shadow:inset 0 1px 0 var(--hair);}
 .nav-in{max-width:720px;margin:0 auto;display:flex;padding:7px 10px 9px;}
 .nav button{flex:1;background:none;border:none;padding:9px 4px;color:var(--faint);font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;border-radius:99px;}
 .nav button.on{color:var(--accent);background:var(--accent-soft);}
@@ -726,17 +726,64 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}
   .sheet>*{opacity:1!important;transform:none!important;}}
 
+/* ---------- the printed document ---------- */
+/* On paper the app gets out of the way entirely and PrintDoc is the page. The
+   old behaviour was to print the app's own cards with their chrome hidden,
+   which read as screenshots pasted into a document rather than a document. */
+.printdoc{display:none;}
 @media print{
-  .no-print{display:none!important;}
-  .bx{background:#fff;font-size:10pt;}
-  .sheet{margin-top:0;padding:0;border-radius:0;max-width:100%;}
-  .card,.ep{break-inside:avoid;}
-  .ep-in{background:#fff;border:1px solid #bbb;}
-  .scrollx{overflow:visible;}
-  .print-head{display:block!important;}
-  @page{margin:14mm;}
+  .sky,.nav,.daybar,.no-print{display:none!important;}
+  .sheet>*{display:none!important;}
+  .sheet>.printdoc{display:block!important;}
+  html,body{background:#fff!important;}
+  .bx{background:#fff;color:#111;font-size:10pt;line-height:1.45;}
+  .sheet{margin:0;padding:0;border-radius:0;max-width:100%;box-shadow:none;background:#fff;}
+  .sheet>*{animation:none!important;opacity:1!important;transform:none!important;}
+  @page{margin:16mm 14mm;}
 }
-.print-head{display:none;}
+.printdoc{color:#16323D;font-size:10pt;line-height:1.45;
+  /* colour is the point of this document, so it is forced rather than left to
+     the browser's "print background graphics" checkbox */
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.printdoc *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+/* the masthead carries the app's own blue and wordmark, so a page handed across
+   a desk is recognisably from the thing on the patient's phone */
+.pmast{background:linear-gradient(105deg,#0A5F97 0%,#057BC1 62%,#2FA5DC 100%);color:#fff;
+  border-radius:8px;padding:14px 16px 15px;}
+.pmark{font-family:var(--display);font-size:9pt;font-weight:600;letter-spacing:0.28em;
+  text-transform:uppercase;opacity:.85;}
+.pmasthead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:9px;}
+.pmast h1{font-family:var(--display);font-size:21pt;font-weight:600;letter-spacing:-0.025em;margin:0;color:#fff;}
+.pmast p{margin:3px 0 0;font-size:9.5pt;color:rgba(255,255,255,.86);}
+.pmeta{text-align:right;font-size:8.5pt;color:rgba(255,255,255,.86);line-height:1.5;flex:0 0 auto;}
+.pnote{margin:10px 0 0;font-size:8.5pt;line-height:1.5;color:#67808C;}
+.printdoc section{margin-top:20px;break-inside:avoid;}
+.printdoc h2{font-family:var(--display);font-size:11.5pt;font-weight:600;letter-spacing:-0.015em;
+  color:#0A5F97;margin:0 0 8px;padding-bottom:4px;border-bottom:1.5pt solid #057BC1;}
+.pbreak{break-before:auto;}
+/* figures read across, each on its own accent rule so the eye tracks the column */
+.pfigs{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+.pfig{border-top:2.5px solid #057BC1;padding-top:5px;}
+.pfig b{display:block;font-family:var(--display);font-size:16pt;font-weight:600;letter-spacing:-0.025em;
+  color:#0A5F97;}
+.pfig span{display:block;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.08em;color:#67808C;margin-top:1px;}
+.pline{margin:9px 0 0;font-size:8.5pt;color:#67808C;line-height:1.5;}
+.pbody{margin:0;font-size:9.5pt;line-height:1.6;white-space:pre-wrap;}
+.plist{margin:0;padding-left:16px;font-size:9.5pt;line-height:1.7;}
+/* the sputum mix, drawn in the colours of the scale itself */
+.pmix{display:flex;gap:6px;align-items:flex-end;}
+.pmixcell{flex:1;min-width:0;text-align:center;}
+.pmixtrack{height:46pt;display:flex;align-items:flex-end;}
+.pmixbar{width:100%;border-radius:2px 2px 0 0;box-shadow:inset 0 0 0 0.5pt rgba(8,54,69,.22);}
+.pmixn{font-family:var(--display);font-size:11pt;font-weight:600;color:#16323D;margin-top:4px;}
+.pmixk{font-size:6.5pt;text-transform:uppercase;letter-spacing:0.05em;color:#67808C;line-height:1.2;}
+.ptab{width:100%;border-collapse:collapse;font-size:8.5pt;margin-top:6px;}
+.ptab+.ptab{margin-top:12px;}
+.ptab th{text-align:left;font-weight:600;font-size:7.5pt;text-transform:uppercase;letter-spacing:0.07em;
+  color:#0A5F97;border-bottom:1.5pt solid #057BC1;padding:0 6px 4px 0;}
+.ptab td{padding:4.5px 6px;border-bottom:0.5pt solid #DCE4EA;vertical-align:top;}
+.ptab tbody tr:nth-child(even){background:#F4F7FA;}
+.ptab tr{break-inside:avoid;}
 `;
 
 /* ------------------------------------------------------------------ */
@@ -1012,7 +1059,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.8.1";
+const BUILD = "3.9";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -5106,23 +5153,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         onDismiss={onDismissWarning}
       />
 
-      {isUnwell && (state.rescue || []).length > 0 && (
-        <RescuePack
-          pack={state.rescue}
-          onChange={setRescue}
-          onStartCourse={(r) => {
-            addCourse({
-              id: "c" + Date.now(),
-              drug: r.name,
-              dose: r.dose,
-              startDate: date,
-              days: null,
-            });
-            setRescue((state.rescue || []).map((x) => (x.id === r.id ? { ...x, lastUsed: date } : x)));
-            setShowDetail(true);
-          }}
-        />
-      )}
+      {/* The rescue pack is a list you keep, not something to log, so it lives on
+          Report next to the backup and the plan rather than opening the day. */}
 
       {isUnwell ? (
         <>
@@ -5431,7 +5463,7 @@ function YearOnYear({ episodes }) {
 // Every measure on one date axis, in its own lane, with episodes shaded straight
 // through the stack. It reports no statistic: it puts the series next to each
 // other and leaves the reading to the person whose body it is.
-function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
+function Timeline({ days, episodes, courses, regimen, track, span, onSpan, print }) {
   const today = todayISO();
   const dates = useMemo(() => {
     const a = [];
@@ -5510,31 +5542,9 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
 
   const SPANS = [{ v: 30, label: "1m" }, { v: 90, label: "3m" }, { v: 180, label: "6m" }, { v: 365, label: "1y" }];
 
-  return (
-    <div className="card">
-      <div className="card-t">
-        <span className="ttl">
-          Side by side
-          <Info title="Side by side">
-            <p>
-              One date across the bottom, every measure you keep in a lane above it. Shaded columns are episodes.
-              The bars underneath are antibiotic courses.
-            </p>
-            <p>
-              Lanes with only a few readings show a dot for each one, so a weekly measurement does not read as a
-              continuous line.
-            </p>
-            <p>
-              There is no correlation figure here. Across this many measures, chance alone produces convincing
-              pairs, so a number would mislead more often than it helped. Start from something you already suspect
-              and see whether the picture supports it.
-            </p>
-          </Info>
-        </span>
-        <Seg options={SPANS} value={span} onChange={onSpan} small />
-      </div>
-
-      <div className="scrollx">
+  const chart = (
+    <>
+    <div className="scrollx">
         <svg className="chart" viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: "100%" }}>
           {bands.map((b) => (
             <rect
@@ -5617,6 +5627,35 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
         <span><i style={{ background: "rgba(172,37,43,.14)" }} />episode</span>
         <span><i style={{ background: "#057BC1" }} />antibiotics</span>
       </div>
+    </>
+  );
+
+  if (print) return chart;
+
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span className="ttl">
+          Side by side
+          <Info title="Side by side">
+            <p>
+              One date across the bottom, every measure you keep in a lane above it. Shaded columns are episodes.
+              The bars underneath are antibiotic courses.
+            </p>
+            <p>
+              Lanes with only a few readings show a dot for each one, so a weekly measurement does not read as a
+              continuous line.
+            </p>
+            <p>
+              There is no correlation figure here. Across this many measures, chance alone produces convincing
+              pairs, so a number would mislead more often than it helped. Start from something you already suspect
+              and see whether the picture supports it.
+            </p>
+          </Info>
+        </span>
+        <Seg options={SPANS} value={span} onChange={onSpan} small />
+      </div>
+      {chart}
     </div>
   );
 }
@@ -6390,6 +6429,289 @@ function StorageHealth({ days }) {
   );
 }
 
+// The printed report. Not the app's cards with their chrome hidden — that is what
+// this used to be, and it came out looking like screenshots pasted into a page.
+// This is a document: one column, hairlines instead of cards, real headings, and
+// tables where the data is tabular.
+function PrintDoc({ state, episodes, from, range }) {
+  const today = todayISO();
+  const days = state.days;
+  const keys = Object.keys(days).filter((k) => k >= from).sort();
+  const eps = episodes.filter((e) => e.end >= from);
+  const gaps = gapsBetween(eps);
+  const durations = eps.map((e) => e.span);
+
+  const conds = (state.conditions || []).length
+    ? (state.conditions || []).map((k) => (CONDITIONS.find((c) => c.key === k) || {}).label).filter(Boolean)
+    : ["Bronchiectasis"];
+
+  // adherence over the range, and the peak flow picture, both from the same
+  // entries the on-screen cards use
+  const care = useMemo(() => {
+    let done = 0;
+    let want = 0;
+    keys.forEach((k) => {
+      const day = days[k];
+      if (!day.status) return;
+      planOf(day, state.regimen).forEach((r) => {
+        done += Math.min(day.care[r.id] || 0, r.target);
+        want += r.target;
+      });
+    });
+    return want ? Math.round((done / want) * 100) : null;
+  }, [keys, days, state.regimen]);
+
+  const pf = useMemo(() => {
+    const wellVals = keys.filter((k) => days[k].status === "well" && days[k].peakFlow !== "")
+      .map((k) => parseFloat(days[k].peakFlow)).filter((v) => !isNaN(v));
+    const all = keys.filter((k) => days[k].peakFlow !== "")
+      .map((k) => parseFloat(days[k].peakFlow)).filter((v) => !isNaN(v));
+    if (!wellVals.length || !all.length) return null;
+    const best = Math.max(...wellVals);
+    const zone = (v) => (v >= best * 0.8 ? "green" : v >= best * 0.5 ? "amber" : "red");
+    const tally = { green: 0, amber: 0, red: 0 };
+    all.forEach((v) => tally[zone(v)]++);
+    return { best, n: all.length, low: Math.min(...all), tally };
+  }, [keys, days]);
+
+  const drugs = useMemo(() => drugHistory(state.courses, days), [state.courses, days]);
+
+  // how the colour was distributed across the range, which is the one chart a
+  // chest clinic reads without needing the axis explained
+  const sputumMix = useMemo(() => {
+    const tally = new Array(SPUTUM.length).fill(0);
+    let total = 0;
+    keys.forEach((k) => {
+      const c = days[k].sputum ? days[k].sputum.color : null;
+      if (c == null) return;
+      tally[c]++;
+      total++;
+    });
+    return {
+      total,
+      peak: Math.max(1, ...tally),
+      purulent: tally.slice(5).reduce((a, b) => a + b, 0),
+      rows: tally.map((n, i) => ({ i, n })).filter((r) => r.n > 0),
+    };
+  }, [keys, days]);
+  const open = (state.questions || []).filter((q) => !q.done);
+  const activeMeds = (state.courses || []).filter((c) => {
+    const ce = c.days ? addDays(c.startDate, c.days - 1) : null;
+    return !ce || ce >= today;
+  });
+  const plan = (state.regimen || []).filter((r) => r.active && r.name);
+
+  const Fig = ({ v, k }) => (
+    <div className="pfig">
+      <b>{v}</b>
+      <span>{k}</span>
+    </div>
+  );
+
+  return (
+    <div className="printdoc">
+      <header className="pmast">
+        <div className="pmark">Clear</div>
+        <div className="pmasthead">
+          <div>
+            <h1>Respiratory log</h1>
+            <p>{conds.join(" · ")}</p>
+          </div>
+          <div className="pmeta">
+            <div>{keys.length ? `${fmtShortYr(keys[0])} — ${fmtShortYr(today)}` : "No entries"}</div>
+            <div>{range ? RANGES.find((r) => r.v === range)?.label : "All time"}</div>
+            <div>Printed {fmtShortYr(today)}</div>
+          </div>
+        </div>
+      </header>
+
+      <p className="pnote">
+        Compiled from a daily log kept by the patient. Figures are counts and medians of what was recorded, not
+        clinical measurements, and the exacerbation counts are the standard feature criteria applied to that log
+        rather than a diagnosis.
+      </p>
+
+      <section>
+        <h2>At a glance</h2>
+        <div className="pfigs">
+          <Fig v={eps.length} k="episodes" />
+          <Fig v={durations.length ? median(durations) + "d" : "—"} k="median length" />
+          <Fig v={gaps.length ? median(gaps) + "d" : "—"} k="median gap" />
+          <Fig v={keys.length} k="days logged" />
+          <Fig v={care != null ? care + "%" : "—"} k="airway care" />
+          <Fig v={pf ? pf.best : "—"} k="peak flow best" />
+        </div>
+        {pf && (
+          <p className="pline">
+            {pf.n} peak flow readings, lowest {pf.low}. Against a personal best of {pf.best}:{" "}
+            {pf.tally.green} in the green zone, {pf.tally.amber} amber, {pf.tally.red} red.
+          </p>
+        )}
+      </section>
+
+      {open.length > 0 && (
+        <section>
+          <h2>To raise at this appointment</h2>
+          <ul className="plist">
+            {open.map((q) => <li key={q.id}>{q.text}</li>)}
+          </ul>
+        </section>
+      )}
+
+      {(plan.length > 0 || activeMeds.length > 0) && (
+        <section>
+          <h2>Current treatment</h2>
+          {plan.length > 0 && (
+            <table className="ptab">
+              <thead><tr><th>Daily airway care</th><th>Doses a day</th></tr></thead>
+              <tbody>
+                {plan.map((r) => <tr key={r.id}><td>{r.name}</td><td>{r.target}</td></tr>)}
+              </tbody>
+            </table>
+          )}
+          {activeMeds.length > 0 && (
+            <table className="ptab">
+              <thead><tr><th>Course</th><th>Dose</th><th>Started</th><th>Days</th></tr></thead>
+              <tbody>
+                {activeMeds.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.drug}</td>
+                    <td>{[c.dose, c.freq ? `${c.freq}×/day` : ""].filter(Boolean).join(", ") || "—"}</td>
+                    <td>{fmtShortYr(c.startDate)}</td>
+                    <td>{c.days || "ongoing"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
+
+      {eps.length > 0 && (
+        <section className="pbreak">
+          <h2>Episodes</h2>
+          <table className="ptab">
+            <thead>
+              <tr>
+                <th>From</th><th>To</th><th>Days</th><th>Gap before</th>
+                <th>Peak sputum</th><th>Blood</th><th>Lowest PF</th><th>Treatment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {eps.map((e, i) => (
+                <tr key={e.id}>
+                  <td>{fmtShortYr(e.start)}</td>
+                  <td>{fmtShortYr(e.end)}</td>
+                  <td>{e.span}</td>
+                  <td>{i > 0 ? diffDays(eps[i - 1].end, e.start) : "—"}</td>
+                  <td>{e.peakColor != null ? SPUTUM[e.peakColor].label.replace("\n", " ") : "—"}</td>
+                  <td>{e.blood ? "yes" : "—"}</td>
+                  <td>{e.minPeakFlow ?? "—"}</td>
+                  <td>{e.meds.length ? e.meds.map((m) => m.drug).join(", ") : "none"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {sputumMix.total > 0 && (
+        <section>
+          <h2>Sputum colour</h2>
+          {/* height by count, width equal. Proportional widths let the commonest
+              colour swallow the row and crushed every label that mattered. */}
+          <div className="pmix">
+            {sputumMix.rows.map((r) => (
+              <div className="pmixcell" key={r.i}>
+                <div className="pmixtrack">
+                  <div
+                    className="pmixbar"
+                    style={{
+                      background: SPUTUM[r.i].hex,
+                      height: Math.max(3, Math.round((r.n / sputumMix.peak) * 46)) + "pt",
+                    }}
+                  />
+                </div>
+                <div className="pmixn">{r.n}</div>
+                <div className="pmixk">{SPUTUM[r.i].short}</div>
+              </div>
+            ))}
+          </div>
+          <p className="pline">
+            {sputumMix.total} days recorded. Purulent — yellow-green or darker — on {sputumMix.purulent} of them,
+            {" "}{Math.round((sputumMix.purulent / sputumMix.total) * 100)}%.
+          </p>
+        </section>
+      )}
+
+      <section className="pbreak">
+        <h2>Everything side by side</h2>
+        <Timeline
+          days={days}
+          episodes={episodes}
+          courses={state.courses}
+          regimen={state.regimen}
+          track={state.track}
+          span={range || 365}
+          print
+        />
+        <p className="pline">
+          Each measure in its own lane over one date axis. Shaded columns are episodes, the bars beneath are
+          antibiotic courses. Lanes with few readings are drawn with a dot per reading.
+        </p>
+      </section>
+
+      {gaps.length >= 2 && (
+        <section>
+          <h2>Days between episodes</h2>
+          <MiniChart
+            kind="bar"
+            height={140}
+            data={eps.slice(1).map((e, i) => ({ label: fmtShort(e.start), value: gaps[i] }))}
+          />
+          <p className="pline">
+            Median {median(gaps)} days across {gaps.length} intervals. Each bar is the settled stretch before that
+            episode began.
+          </p>
+        </section>
+      )}
+
+      {drugs.length > 0 && (
+        <section>
+          <h2>Antibiotic history</h2>
+          <table className="ptab">
+            <thead>
+              <tr><th>Drug</th><th>Courses</th><th>Symptoms eased</th><th>Doses taken</th><th>Cleared it</th></tr>
+            </thead>
+            <tbody>
+              {drugs.map((d) => (
+                <tr key={d.drug}>
+                  <td>{d.drug}</td>
+                  <td>{d.n}</td>
+                  <td>{d.easedMedian != null ? `day ${d.easedMedian}` : "—"}</td>
+                  <td>{d.takenMedian != null ? `${d.takenMedian}%` : "—"}</td>
+                  <td>{d.rated ? `${d.tally.resolved} of ${d.rated}` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="pline">
+            Symptoms eased is the first day a symptom present at the start of a course was recorded lower. Doses
+            taken is the proportion of the prescribed doses that were logged.
+          </p>
+        </section>
+      )}
+
+      {eps.slice(-4).reverse().map((e) => (
+        <section className="pbreak" key={"n" + e.id}>
+          <h2>{fmtShortYr(e.start)} — {fmtShortYr(e.end)}</h2>
+          <p className="pbody">{episodeSummary(e, days, state.regimen)}</p>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, onRescue, onShareWeek }) {
   const [range, setRange] = useState(365);
   const [toast, setToast] = useState("");
@@ -6596,12 +6918,7 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
         </div>
       </div>
 
-      <div className="print-head" style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: "13pt", fontWeight: 700 }}>Bronchiectasis log</div>
-        <div style={{ fontSize: "9pt", color: "#555" }}>
-          {dateKeys.length ? `${fmtShortYr(dateKeys[0])} to ${fmtShortYr(today)}` : "No entries"} · generated {fmtShortYr(today)}
-        </div>
-      </div>
+      <PrintDoc state={state} episodes={episodes} from={from} range={range} />
 
       <div className="card">
         <div className="card-t"><span>Summary</span></div>
