@@ -595,6 +595,14 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .tbl td.m{font-size:11px;font-weight:500;white-space:nowrap;}
 .chart{display:block;overflow:visible;}
 .legend{display:flex;gap:15px;margin-top:11px;font-size:11px;color:var(--muted);}
+/* episodes by calendar month */
+.months{display:flex;gap:4px;align-items:flex-end;}
+.mon{flex:1;min-width:0;text-align:center;}
+.montrack{height:64px;display:flex;align-items:flex-end;}
+.monbar{width:100%;min-height:3px;border-radius:3px 3px 0 0;background:var(--accent);}
+.monn{display:block;font-family:var(--display);font-size:12px;font-weight:600;color:var(--ink);
+  margin-top:5px;min-height:15px;}
+.monk{display:block;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:var(--faint);}
 .legend span{display:flex;align-items:center;gap:5px;}
 .legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
 /* drugs, pooled */
@@ -1071,7 +1079,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.11";
+const BUILD = "3.12";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1412,6 +1420,60 @@ function leadTimes(days, episodes, pick, worse, lookback = 14) {
     if (run > 0) out.push({ start: ep.start, days: run });
   }
   return out;
+}
+
+// Every episode lined up at day zero, and each measure averaged across the days
+// either side of it. One episode is a story; four of them stacked shows the
+// shape your own run-up has, which is the thing no single episode can tell you.
+function eventLocked(days, episodes, pick, before = 14, after = 14) {
+  const cols = [];
+  for (let i = -before; i <= after; i++) cols.push({ off: i, vals: [] });
+  for (const ep of episodes) {
+    for (let i = -before; i <= after; i++) {
+      const d = days[addDays(ep.start, i)];
+      if (!d) continue;
+      const v = pick(d);
+      if (v == null || isNaN(v)) continue;
+      cols[i + before].vals.push(v);
+    }
+  }
+  const out = cols.map((c) => ({
+    off: c.off,
+    n: c.vals.length,
+    mean: c.vals.length ? c.vals.reduce((a, b) => a + b, 0) / c.vals.length : null,
+  }));
+  // a column averaged from one episode is that episode, not a pattern
+  return out.filter((c) => c.n >= 2).length >= 8 ? out : null;
+}
+
+// Whether recovery is getting quicker or slower. Duration alone would only say
+// how long you were marked unwell; this pairs it with the year so a trend can be
+// read off rather than inferred from a list of dates.
+function recoveryTrend(episodes) {
+  if (episodes.length < 3) return null;
+  const pts = episodes.map((e) => ({ start: e.start, span: e.span }));
+  const half = Math.floor(pts.length / 2);
+  const first = pts.slice(0, half).map((p) => p.span);
+  const last = pts.slice(-half).map((p) => p.span);
+  return {
+    pts,
+    early: median(first),
+    late: median(last),
+    n: pts.length,
+  };
+}
+
+// Episodes by calendar month, pooled across every year on record. Small numbers,
+// so it is drawn as a count rather than a rate and says how many years it spans.
+function seasonality(episodes) {
+  const by = new Array(12).fill(0);
+  const years = new Set();
+  episodes.forEach((e) => {
+    const d = parseISO(e.start);
+    by[d.getMonth()]++;
+    years.add(d.getFullYear());
+  });
+  return { by, years: years.size, total: episodes.length };
 }
 
 // Courses pooled by drug. One course tells you nothing; four of the same drug
@@ -3159,16 +3221,22 @@ function RescuePack({ pack, onChange, onStartCourse }) {
     return (
       <div className="card">
         <div className="card-t"><span>Rescue pack</span></div>
+        <div className="note" style={{ marginBottom: 12 }}>Swipe a medication left to remove it.</div>
         {draft.map((r, i) => (
-          <div className="planrow" key={r.id}>
-            <input className="inp" placeholder="Medication" value={r.name} onChange={(e) => set(i, { name: e.target.value })} />
-            <input className="inp" placeholder="Dose and course length" value={r.dose} onChange={(e) => set(i, { dose: e.target.value })} />
-            <div className="planfoot">
-              <span className="note">Expiry</span>
-              <input className="inp" type="date" style={{ maxWidth: 170 }} value={r.expiry || ""} onChange={(e) => set(i, { expiry: e.target.value })} />
-              <button className="btn sm" onClick={() => setDraft((d) => d.filter((_, k) => k !== i))}>Remove</button>
+          <SwipeRow
+            key={r.id}
+            label={r.name || "medication"}
+            onDelete={() => setDraft((d) => d.filter((_, k) => k !== i))}
+          >
+            <div className="planrow">
+              <input className="inp" placeholder="Medication" value={r.name} onChange={(e) => set(i, { name: e.target.value })} />
+              <input className="inp" placeholder="Dose and course length" value={r.dose} onChange={(e) => set(i, { dose: e.target.value })} />
+              <div className="planfoot">
+                <span className="note">Expiry</span>
+                <input className="inp" type="date" style={{ maxWidth: 170 }} value={r.expiry || ""} onChange={(e) => set(i, { expiry: e.target.value })} />
+              </div>
             </div>
-          </div>
+          </SwipeRow>
         ))}
         <div className="btnrow" style={{ marginTop: 12 }}>
           <button className="btn" onClick={() => setDraft((d) => [...d, { id: "p" + Date.now(), name: "", dose: "", expiry: "" }])}>
@@ -3334,7 +3402,7 @@ function PeakFlowReminder({ lastPF, date, onSave, onDismiss }) {
 // way a mail list behaves. The page's own day-swipe is told to keep off any row
 // wearing this (see the blocked list in onTouchStart), so the horizontal axis
 // belongs to whichever row the finger landed on and the two never fight.
-function SwipeRow({ onDelete, label, children }) {
+function SwipeRow({ onDelete, label, children, confirm }) {
   const [dx, setDx] = useState(0);
   const [glide, setGlide] = useState(false);
   const g = useRef(null);
@@ -3375,7 +3443,10 @@ function SwipeRow({ onDelete, label, children }) {
     setGlide(true);
     if (!st || st.axis !== "x") return;
     const w = (box.current && box.current.offsetWidth) || 320;
-    if (-dx > w * 0.55) {
+    // A throw deletes outright for lists you keep — a plan, a rescue pack. Rows
+    // holding something you actually recorded ask for the tap as well, because
+    // one over-enthusiastic swipe should not take a course out of your history.
+    if (!confirm && -dx > w * 0.55) {
       setDx(-w);
       window.setTimeout(onDelete, 180);
       return;
@@ -3418,7 +3489,7 @@ function PlanEditor({ regimen, onChange, onClose }) {
   return (
     <div className="card flat">
       <div className="note" style={{ marginBottom: 12 }}>
-        Set what a full day looks like for you.
+        Set what a full day looks like for you. Swipe a treatment left to remove it.
         <Info title="Your care plan">
           <p>Doses a day is what the ring counts up to.</p>
           <p>
@@ -5002,7 +5073,8 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
               }}
             />
           ) : (
-            <div className="course" key={c.id}>
+            <SwipeRow key={c.id} label={c.drug} onDelete={() => deleteCourse(c.id)} confirm>
+            <div className="course">
               <div className="nm">
                 {c.drug}
                 <small>
@@ -5034,23 +5106,14 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 >
                   {"✎"}
                 </button>
-                <button
-                  className="iconsm del"
-                  aria-label={"Delete " + c.drug}
-                  onClick={() => {
-                    if (window.confirm("Delete " + c.drug + " from your record? Ending a course keeps it in your history; deleting removes it.")) {
-                      deleteCourse(c.id);
-                    }
-                  }}
-                >
-                  {"×"}
-                </button>
               </div>
             </div>
+            </SwipeRow>
           )
         )}
         {finishedCourses.map((c) => (
           <div key={c.id} style={{ paddingTop: 14 }}>
+            <SwipeRow label={c.drug} onDelete={() => deleteCourse(c.id)} confirm>
             <div className="course" style={{ paddingBottom: 4 }}>
               <div className="nm">
                 {c.drug}
@@ -5065,19 +5128,9 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
                 >
                   {"✎"}
                 </button>
-                <button
-                  className="iconsm del"
-                  aria-label={"Delete " + c.drug}
-                  onClick={() => {
-                    if (window.confirm("Delete " + c.drug + " from your record? This removes it from your history for good.")) {
-                      deleteCourse(c.id);
-                    }
-                  }}
-                >
-                  {"×"}
-                </button>
               </div>
             </div>
+            </SwipeRow>
             <ResponseProfile resp={courseResponse(c, state.days)} />
             {(() => {
               const a = courseAdherence(c, state.days);
@@ -5766,6 +5819,168 @@ function Timeline({ days, episodes, courses, regimen, track, span, onSpan, print
   );
 }
 
+// The shape of your own run-up, averaged over every episode you have logged.
+function RunUp({ days, episodes }) {
+  const LANES = [
+    { key: "sputum", label: "Sputum colour", col: "#AFAE3E", pick: (d) => (d.sputum ? d.sputum.color : null) },
+    { key: "symptoms", label: "Symptom load", col: "#AC252B", pick: (d) => (d.status ? Object.values(d.symptoms || {}).reduce((a, b) => a + (b || 0), 0) : null) },
+    {
+      key: "peak",
+      label: "Peak flow",
+      col: "#057BC1",
+      pick: (d) => (d.peakFlow !== "" && !isNaN(parseFloat(d.peakFlow)) ? parseFloat(d.peakFlow) : null),
+    },
+  ];
+  const rows = useMemo(
+    () => LANES.map((l) => ({ ...l, data: eventLocked(days, episodes, l.pick) })).filter((l) => l.data),
+    [days, episodes]
+  );
+  if (episodes.length < 3) return null;
+  if (!rows.length) return null;
+
+  const W = 640, LH = 52, GAP = 22, TOP = 15, L = 4, R = 4;
+  const iw = W - L - R;
+  const H = TOP + rows.length * (LH + GAP) + 16;
+  const n = rows[0].data.length;
+  const x = (i) => L + (i / (n - 1)) * iw;
+  const zero = x(rows[0].data.findIndex((c) => c.off === 0));
+
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span className="ttl">
+          Your run-up
+          <Info title="Your run-up">
+            <p>
+              Every episode you have logged, lined up on the day it opened, with each measure averaged across the
+              two weeks either side.
+            </p>
+            <p>
+              One episode is a story. Several of them stacked show the shape your own body tends to follow, which
+              is what tells you what to watch for.
+            </p>
+            <p>
+              Days averaged from fewer than two episodes are left out, and the whole card stays hidden until there
+              is enough to average.
+            </p>
+          </Info>
+        </span>
+        <span className="hint">{episodes.length} episodes</span>
+      </div>
+      <div className="scrollx">
+        <svg className="chart" viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: "100%" }}>
+          <rect x={zero} y={0} width={Math.max(1.5, iw / n)} height={TOP + rows.length * (LH + GAP) - GAP + 4}
+            fill="#AC252B" opacity="0.12" />
+          {rows.map((lane, k) => {
+            const top = TOP + k * (LH + GAP);
+            const vals = lane.data.map((c) => c.mean);
+            const nums = vals.filter((v) => v != null);
+            const min = Math.min(...nums);
+            const max = Math.max(...nums);
+            const y = (v) => top + LH - ((v - min) / (max - min || 1)) * LH;
+            const pts = [];
+            lane.data.forEach((c, i) => c.mean != null && pts.push([x(i), y(c.mean)]));
+            return (
+              <g key={lane.key}>
+                <line x1={L} x2={W - R} y1={top + LH} y2={top + LH} stroke="#DCE4EA" strokeWidth="1" />
+                <text className="ct" x={L} y={top - 4}>{lane.label}</text>
+                <path
+                  d={pts.map((q, i) => (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1)).join(" ")}
+                  fill="none" stroke={lane.col} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
+                />
+              </g>
+            );
+          })}
+          <text className="ct" x={L} y={H - 2}>14 days before</text>
+          <text className="ct" x={zero} y={H - 2} textAnchor="middle">day it opened</text>
+          <text className="ct" x={W - R} y={H - 2} textAnchor="end">14 days after</text>
+        </svg>
+      </div>
+      <div className="note" style={{ marginTop: 11 }}>
+        Averaged across your episodes. The shaded column is the day you marked yourself unwell — what happens to
+        the left of it is the warning you already had.
+      </div>
+    </div>
+  );
+}
+
+// Whether episodes are getting shorter, and which months they land in.
+function RecoveryAndSeason({ episodes }) {
+  const rec = useMemo(() => recoveryTrend(episodes), [episodes]);
+  const sea = useMemo(() => seasonality(episodes), [episodes]);
+  if (!rec && sea.total < 3) return null;
+  const MON = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+  const peak = Math.max(1, ...sea.by);
+  return (
+    <>
+      {rec && (
+        <div className="card">
+          <div className="card-t">
+            <span className="ttl">
+              How long they last
+              <Info title="How long they last">
+                <p>Each bar is one episode, oldest on the left, as many days as you were marked unwell.</p>
+                <p>
+                  The two figures compare the median of your earlier half against your later half. With a handful
+                  of episodes that is a direction, not a trend — it takes years of them before it is more than
+                  that.
+                </p>
+              </Info>
+            </span>
+            <span className="hint">{rec.n} episodes</span>
+          </div>
+          <MiniChart
+            kind="bar"
+            height={150}
+            data={rec.pts.map((p) => ({ label: fmtShort(p.start), value: p.span }))}
+          />
+          <div className="stats" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+            <div className="stat">
+              <div className="v">{rec.early}<small>d</small></div>
+              <div className="k">earlier half</div>
+            </div>
+            <div className="stat">
+              <div className="v">{rec.late}<small>d</small></div>
+              <div className="k">later half</div>
+            </div>
+          </div>
+          <div className="note" style={{ marginTop: 11 }}>
+            {rec.late < rec.early
+              ? `Your later episodes have run ${rec.early - rec.late} days shorter than your earlier ones.`
+              : rec.late > rec.early
+              ? `Your later episodes have run ${rec.late - rec.early} days longer than your earlier ones. Worth raising if it holds.`
+              : "About the same length either side."}
+          </div>
+        </div>
+      )}
+
+      {sea.total >= 3 && (
+        <div className="card">
+          <div className="card-t">
+            <span>Which months</span>
+            <span className="hint">{sea.years} year{sea.years === 1 ? "" : "s"}</span>
+          </div>
+          <div className="months">
+            {sea.by.map((n, i) => (
+              <div className="mon" key={i}>
+                <div className="montrack">
+                  <div className="monbar" style={{ height: (n / peak) * 100 + "%", opacity: n ? 1 : 0.18 }} />
+                </div>
+                <span className="monn">{n || ""}</span>
+                <span className="monk">{MON[i]}</span>
+              </div>
+            ))}
+          </div>
+          <div className="note" style={{ marginTop: 11 }}>
+            {sea.total} episodes across {sea.years} year{sea.years === 1 ? "" : "s"}. Small numbers, so read it as
+            where yours have fallen so far rather than a season you are due.
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // What each antibiotic has actually done for you, pooled across every course of
 // it. One course is an anecdote; four of the same drug across four episodes is
 // the nearest thing to evidence one person can hold, and it is the single most
@@ -6134,6 +6349,10 @@ function TrendsView({ state, episodes }) {
       />
 
       <LeadTime days={days} episodes={episodes} />
+
+      <RunUp days={days} episodes={episodes} />
+
+      <RecoveryAndSeason episodes={episodes} />
 
       <DrugHistory courses={state.courses} days={days} />
 
