@@ -188,9 +188,11 @@ const CSS = `
    swipe reads as moving between days rather than the contents reshuffling */
 @keyframes slideL{from{opacity:.35;transform:translate3d(46%,0,0);}to{opacity:1;transform:none;}}
 @keyframes slideR{from{opacity:.35;transform:translate3d(-46%,0,0);}to{opacity:1;transform:none;}}
-.sheet.from-left{animation:slideL .3s var(--ease) both;}
-.sheet.from-right{animation:slideR .3s var(--ease) both;}
+.sheet.from-left,.dayface.from-left{animation:slideL .3s var(--ease) both;}
+.sheet.from-right,.dayface.from-right{animation:slideR .3s var(--ease) both;}
 .sheet.from-left>*,.sheet.from-right>*{animation:none;}
+/* the day's own figures, which travel with the sheet under a swipe */
+.dayface{will-change:transform;}
 .scrim{position:fixed;inset:0;z-index:80;background:rgba(8,54,69,.55);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);animation:fadein .25s var(--ease) both;}
 /* A sheet is a DOM child of whatever opened it, and several open from card
@@ -341,10 +343,12 @@ const CSS = `
 .sheet>*:first-child{margin-top:0;}
 /* pan-y hands vertical scrolling back to the browser while the horizontal axis stays
    ours to drag; the controls below need their own axis back */
-.sheet.swipeable{touch-action:pan-y;}
-.sheet.swipeable .scrollx{touch-action:pan-x;}
-.sheet.swipeable input[type=range],.sheet.swipeable textarea,.sheet.swipeable select,
-.sheet.swipeable .week,.sheet.swipeable .ribbon{touch-action:auto;}
+/* The day-swipe lives on the sky and on the sticky day bar, and nowhere else.
+   The sheet below is full of rows that want the horizontal axis for themselves —
+   swiping a plan row away, and whatever else gets one later — so the two
+   gestures never occupy the same surface and never have to negotiate. */
+.sky.swipeable,.daybar.swipeable{touch-action:pan-y;}
+.sky.swipeable .week,.sky.swipeable .ribbon{touch-action:auto;}
 
 /* ---------- sections ---------- */
 .card{background:#fff;border:none;border-radius:22px;padding:21px 20px;margin-top:14px;box-shadow:var(--float);}
@@ -1067,7 +1071,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.10";
+const BUILD = "3.11";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -7225,6 +7229,7 @@ function App() {
   const [slide, setSlide] = useState("");
   const touch = useRef(null);
   const sheetRef = useRef(null);
+  const faceRef = useRef(null);
   const [stuck, setStuck] = useState(false);
   const [date, setDate] = useState(todayISO());
   // an installed app resumes from background rather than reloading, so the calendar
@@ -7427,20 +7432,26 @@ function App() {
     return () => io.disconnect();
   }, [tab, ready]);
 
+  // The ring and the day's figures travel with the sheet, so the whole day moves
+  // as one object. The wordmark, the week strip and the clouds stay put: they are
+  // the frame the day moves inside, and a week strip that slid away would leave
+  // nothing showing which day you had landed on.
+  const faces = () => [sheetRef.current, faceRef.current].filter(Boolean);
+
   const paint = (dx) => {
-    const el = sheetRef.current;
-    if (!el) return;
-    el.style.transition = "";
-    el.style.transform = "translate3d(" + dx + "px,0,0)";
-    el.style.opacity = String(Math.max(0.5, 1 - Math.abs(dx) / 560));
+    faces().forEach((el) => {
+      el.style.transition = "";
+      el.style.transform = "translate3d(" + dx + "px,0,0)";
+      el.style.opacity = String(Math.max(0.5, 1 - Math.abs(dx) / 560));
+    });
   };
 
   const settle = (dx, ms, gone) => {
-    const el = sheetRef.current;
-    if (!el) return;
-    el.style.transition = "transform " + ms + "ms var(--ease), opacity " + ms + "ms var(--ease)";
-    el.style.transform = "translate3d(" + dx + "px,0,0)";
-    el.style.opacity = gone ? "0" : "1";
+    faces().forEach((el) => {
+      el.style.transition = "transform " + ms + "ms var(--ease), opacity " + ms + "ms var(--ease)";
+      el.style.transform = "translate3d(" + dx + "px,0,0)";
+      el.style.opacity = gone ? "0" : "1";
+    });
   };
 
   const onTouchStart = (e) => {
@@ -7450,7 +7461,9 @@ function App() {
     if (!t) return;
     const el = e.target;
     const blocked =
-      el && el.closest && el.closest('input[type="range"], .scrollx, textarea, select, .week, .ribbon, .swipebody');
+      // only what lives inside a swipe surface needs naming now; the sheet's rows
+      // are on a different surface entirely and cannot collide with this
+      el && el.closest && el.closest('.week');
     if (blocked) return;
     touch.current = { x: t.clientX, y: t.clientY, at: Date.now(), axis: null, dx: 0 };
   };
@@ -7783,8 +7796,12 @@ function App() {
       <style>{CSS}</style>
 
       <div
-        className={"sky no-print" + (tab === "today" ? "" : " compact")}
+        className={"sky no-print" + (tab === "today" ? "" : " compact") + (tab === "today" ? " swipeable" : "")}
         style={{ "--clarity": clarity }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
       >
         {tab === "today" && (
           <>
@@ -7870,21 +7887,29 @@ function App() {
           {tab === "today" && (
             <>
               <WeekStrip date={date} setDate={setDate} days={state.days} weekEnd={weekEnd} />
-              <StatusFork
-                day={state.days[date]}
-                onWell={() => quickWell(date)}
-                onIll={() => setStatus(date, "unwell")}
-                onClear={() => setStatus(date, null)}
-              />
-              <Hero episodes={episodes} days={state.days} date={date} run={run} care={care} regimen={state.regimen} compact />
-              <GlassStats days={state.days} date={date} regimen={state.regimen} />
+              <div className={"dayface " + slide} key={date + slide} ref={faceRef}>
+                <StatusFork
+                  day={state.days[date]}
+                  onWell={() => quickWell(date)}
+                  onIll={() => setStatus(date, "unwell")}
+                  onClear={() => setStatus(date, null)}
+                />
+                <Hero episodes={episodes} days={state.days} date={date} run={run} care={care} regimen={state.regimen} compact />
+                <GlassStats days={state.days} date={date} regimen={state.regimen} />
+              </div>
             </>
           )}
         </div>
       </div>
 
       {tab === "today" && stuck && !showMonth && !showAbout && (
-        <div className="daybar no-print">
+        <div
+          className="daybar no-print swipeable"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={onTouchEnd}
+        >
           <button className="wnav" aria-label="Previous day" onClick={() => goDay(-1)}>
             {"‹"}
           </button>
@@ -7934,13 +7959,9 @@ function App() {
       )}
 
       <div
-        className={"sheet " + slide + (tab === "today" ? " swipeable" : "")}
+        className={"sheet " + slide}
         key={tab + date + slide}
         ref={sheetRef}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={onTouchEnd}
       >
         {tab === "today" && dueMilestone && (
           <Milestone value={dueMilestone} run={run} onDismiss={() => ackMilestone(dueMilestone)} />
