@@ -56,6 +56,18 @@ This is generated from your log by arithmetic, not by a language model. It is a 
 
 ![A write-up for your team](screenshots/clear-store-07-handover.jpg)
 
+**Everything on one axis.** Every measure you keep, stacked in its own lane over a shared date line, with your episodes shaded straight through the stack and your antibiotic courses as bars underneath. Sputum colour, symptom load, airway care, peak flow against your own best, air quality. You can see whether things move together — which is a question only you can answer about your own body.
+
+There is deliberately no correlation figure attached to it. With this many measures there are around two hundred possible pairings, and roughly ten of them will look convincing by chance in a log containing nothing real at all. A number would make coincidence look like a finding. It shows you the picture instead.
+
+![See what moves with what](screenshots/clear-store-07b-together.jpg)
+
+**How much warning you actually get.** For each past episode it walks backwards from the day it opened and counts how many days running your sputum had already been darker, or your peak flow lower, than your own settled baseline. It stops at the first day that was back to normal, so what you get is the run leading straight into it. *Sputum turned 4 days early, median across 3 episodes.* That number is the difference between ringing your team and waiting another day.
+
+**What has actually worked.** Every antibiotic course you have recorded, pooled by drug: how many courses, which day symptoms first eased, what proportion of the prescribed doses you actually logged, and how many of them cleared it. The day symptoms eased is read out of your own entries, not something you were asked to judge afterwards. Doses taken sits next to the outcome on purpose — a drug that failed on sixty per cent of its doses has not really been tried.
+
+One course is an anecdote. Four courses of the same drug across four episodes is the closest thing to evidence a single person can hold, and it is the most useful thing you can put in front of whoever does your prescribing.
+
 **The numbers that actually matter.** Episodes this year against last year. Days between episodes. Peak flow read against your own personal best in green, amber and red zones rather than against population averages, which are a poor guide with structural lung disease. Airway care adherence compared against what followed it, labelled as association rather than cause.
 
 ![Longer gaps. Fewer episodes.](screenshots/clear-store-08-patterns.jpg)

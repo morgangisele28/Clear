@@ -561,6 +561,27 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .tbl td{padding:7px 6px;border-bottom:1px solid var(--hair-2);vertical-align:top;}
 .tbl td.m{font-size:11px;font-weight:500;white-space:nowrap;}
 .chart{display:block;overflow:visible;}
+.legend{display:flex;gap:15px;margin-top:11px;font-size:11px;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:5px;}
+.legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+/* drugs, pooled */
+.drugs{display:flex;flex-direction:column;gap:13px;}
+.drug{background:var(--paper);border-radius:14px;padding:13px 14px;}
+.dh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.dh b{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-0.015em;color:var(--ink);}
+.dh span{font-size:11px;color:var(--muted);white-space:nowrap;}
+.dstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px;}
+.dstats span{display:flex;flex-direction:column;gap:2px;font-size:9.5px;font-weight:600;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--faint);line-height:1.3;}
+.dstats em{font-family:var(--display);font-size:16px;font-weight:600;font-style:normal;letter-spacing:-0.02em;
+  color:var(--ink);text-transform:none;}
+/* outcomes as one bar rather than three numbers: the shape is the point */
+.dbar{display:flex;gap:2px;height:5px;margin-top:11px;}
+.dbar i{border-radius:3px;}
+.dbar i.resolved{background:#7FB800;}
+.dbar i.partial{background:#E3B341;}
+.dbar i.failed{background:#D98A80;}
+.dnote{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--muted);}
 .chart .ct{font-size:10px;font-weight:500;fill:var(--muted);font-family:var(--body);}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
@@ -970,7 +991,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.6.1";
+const BUILD = "3.7";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1250,6 +1271,151 @@ function courseResponse(course, days) {
     sputumEnd: last ? last.sputum.color : null,
     loggedDays: logged.length,
     windowDays: window.length,
+  };
+}
+
+// ------------------------------------------------------------------
+//  Cross-metric analytics
+//
+//  Everything below is anchored to an event and looks at a window BEFORE it.
+//  That is not a stylistic choice. Two things go wrong with n-of-1 diary data
+//  and both are avoided the same way:
+//
+//  1. Direction. Care adherence falls because you are ill. Correlating the two
+//     over the same days reads that backwards as "less care made you ill".
+//  2. Multiplicity. There are around twenty series here, so 190 pairings; at
+//     the usual threshold roughly ten of them look real in a log containing
+//     nothing real at all. Diary days are also autocorrelated, so the effective
+//     sample is far smaller than the day count, which inflates it further.
+//
+//  So: no coefficients, no p-values, nothing that scans pairs looking for a
+//  hit. Contrasts of extremes, medians with the n printed next to them, and
+//  charts that put the series side by side and let the reader do the work.
+// ------------------------------------------------------------------
+
+// How many days a measure had already left its own baseline before an episode
+// opened. Walks back from onset and stops at the first day that was back to
+// normal, so what comes out is the run immediately preceding it rather than any
+// blip in the fortnight before.
+function leadTimes(days, episodes, pick, worse, lookback = 14) {
+  const out = [];
+  for (const ep of episodes) {
+    // baseline from settled days in the season before this episode, not from all
+    // time, so a slow drift over years does not flatten every lead time to zero
+    const base = [];
+    for (let i = 1; i <= 120; i++) {
+      const d = days[addDays(ep.start, -i)];
+      if (d && d.status === "well") {
+        const v = pick(d);
+        if (v != null) base.push(v);
+      }
+    }
+    if (base.length < 8) continue;
+    const b = median(base);
+    let run = 0;
+    for (let i = 1; i <= lookback; i++) {
+      const d = days[addDays(ep.start, -i)];
+      if (!d) continue;
+      const v = pick(d);
+      if (v == null) continue;
+      if (worse(v, b)) run = i;
+      else break;
+    }
+    if (run > 0) out.push({ start: ep.start, days: run });
+  }
+  return out;
+}
+
+// Courses pooled by drug. One course tells you nothing; four of the same drug
+// across four episodes is the closest thing to evidence a single person can
+// have, and it is the thing worth taking to an appointment.
+function drugHistory(courses, days) {
+  const byDrug = {};
+  for (const c of courses || []) {
+    if (!c.drug) continue;
+    const key = c.drug.trim().toLowerCase();
+    if (!byDrug[key]) byDrug[key] = { drug: c.drug.trim(), courses: [] };
+    const resp = courseResponse(c, days);
+    // the first day any symptom that was present at the start moved at all
+    const eased = resp
+      ? resp.symptoms.map((x) => x.improvedDay).filter((x) => x != null)
+      : [];
+    const cleared = resp
+      ? resp.symptoms.map((x) => x.resolvedDay).filter((x) => x != null)
+      : [];
+    // doses actually ticked off against what the course asked for
+    let done = 0;
+    let want = 0;
+    if (c.freq > 0 && c.days > 0) {
+      for (let i = 0; i < c.days; i++) {
+        const k = addDays(c.startDate, i);
+        if (k > todayISO()) break;
+        want += c.freq;
+        done += Math.min((days[k] && days[k].courseDoses && days[k].courseDoses[c.id]) || 0, c.freq);
+      }
+    }
+    byDrug[key].courses.push({
+      id: c.id,
+      start: c.startDate,
+      outcome: c.outcome || null,
+      note: c.outcomeNote || "",
+      route: c.route || null,
+      easedDay: eased.length ? Math.min(...eased) : null,
+      clearedDay: cleared.length ? Math.min(...cleared) : null,
+      taken: want ? Math.round((done / want) * 100) : null,
+    });
+  }
+  return Object.values(byDrug)
+    .map((g) => {
+      const eased = g.courses.map((c) => c.easedDay).filter((x) => x != null);
+      const taken = g.courses.map((c) => c.taken).filter((x) => x != null);
+      const tally = { resolved: 0, partial: 0, failed: 0 };
+      g.courses.forEach((c) => c.outcome && tally[c.outcome] !== undefined && tally[c.outcome]++);
+      return {
+        ...g,
+        n: g.courses.length,
+        easedMedian: eased.length ? median(eased) : null,
+        easedN: eased.length,
+        takenMedian: taken.length ? median(taken) : null,
+        tally,
+        rated: tally.resolved + tally.partial + tally.failed,
+        notes: g.courses.map((c) => c.note).filter(Boolean),
+        last: g.courses.map((c) => c.start).sort().slice(-1)[0],
+      };
+    })
+    .sort((a, b) => b.n - a.n || (b.last < a.last ? -1 : 1));
+}
+
+// One value per day for each lane of the timeline, on a shared date axis so the
+// lanes cannot slide out of register with one another.
+function laneSeries(days, dates, regimen, bestPf) {
+  const careAt = (k) => {
+    const day = days[k];
+    if (!day || !day.status) return null;
+    const plan = planOf(day, regimen);
+    if (!plan.length) return null;
+    let done = 0;
+    let want = 0;
+    plan.forEach((r) => {
+      done += Math.min(day.care[r.id] || 0, r.target);
+      want += r.target;
+    });
+    return want ? (done / want) * 100 : null;
+  };
+  return {
+    sputum: dates.map((k) => (days[k] && days[k].sputum ? days[k].sputum.color : null)),
+    care: dates.map(careAt),
+    symptoms: dates.map((k) => {
+      const day = days[k];
+      if (!day || !day.status) return null;
+      return Object.values(day.symptoms || {}).reduce((n, v) => n + (v || 0), 0);
+    }),
+    peak: dates.map((k) => {
+      const v = parseFloat((days[k] || {}).peakFlow);
+      if (isNaN(v) || !bestPf) return null;
+      return Math.round((v / bestPf) * 100);
+    }),
+    aqi: dates.map((k) => (days[k] && days[k].aqi && days[k].aqi.value != null ? days[k].aqi.value : null)),
   };
 }
 
@@ -5241,6 +5407,359 @@ function YearOnYear({ episodes }) {
   );
 }
 
+// Everything on one date axis, in its own lane, with episodes shaded straight
+// through the stack. It draws no conclusions and reports no statistic — it puts
+// the series next to each other so the reader can see for themselves whether
+// anything moves together, which is the honest version of "compare two things".
+function Timeline({ days, episodes, courses, regimen, track, span, onSpan }) {
+  const today = todayISO();
+  const dates = useMemo(() => {
+    const a = [];
+    for (let i = span - 1; i >= 0; i--) a.push(addDays(today, -i));
+    return a;
+  }, [span, today]);
+
+  const bestPf = useMemo(() => {
+    const v = Object.keys(days)
+      .filter((k) => days[k].status === "well" && days[k].peakFlow !== "")
+      .map((k) => parseFloat(days[k].peakFlow))
+      .filter((x) => !isNaN(x));
+    return v.length >= 5 ? Math.max(...v) : null;
+  }, [days]);
+
+  const series = useMemo(
+    () => laneSeries(days, dates, regimen, bestPf),
+    [days, dates, regimen, bestPf]
+  );
+
+  const tracks = (k) => !track || track[k] !== false;
+  const LANES = [
+    { key: "sputum", label: "Sputum colour", lo: 0, hi: 7, kind: "sputum", on: true },
+    { key: "symptoms", label: "Symptom load", lo: 0, hi: null, kind: "area", col: "#C2833A", on: true },
+    { key: "care", label: "Airway care", lo: 0, hi: 100, kind: "line", col: "#4E9E5F", on: true },
+    { key: "peak", label: "Peak flow, % of best", lo: null, hi: null, kind: "line", col: "#057BC1", on: tracks("peakFlow") },
+    { key: "aqi", label: "Air quality", lo: 0, hi: null, kind: "line", col: "#8A7BB8", on: tracks("aqi") },
+  ].filter((l) => l.on && series[l.key].filter((v) => v != null).length >= 3);
+
+  if (!LANES.length) return null;
+
+  const W = 640, L = 4, R = 4, LH = 46, GAP = 17, TOP = 14;
+  const iw = W - L - R;
+  const H = TOP + LANES.length * (LH + GAP) + 14;
+  const x = (i) => L + (dates.length === 1 ? iw / 2 : (i / (dates.length - 1)) * iw);
+  const bw = iw / dates.length;
+
+  const laneTop = (n) => TOP + n * (LH + GAP);
+
+  const bands = (episodes || [])
+    .filter((e) => e.end >= dates[0] && e.start <= today)
+    .map((e) => {
+      const a = Math.max(0, diffDays(dates[0], e.start));
+      const b = Math.min(dates.length - 1, diffDays(dates[0], e.end));
+      return { a, b, id: e.id };
+    });
+
+  const runs = (courses || [])
+    .filter((c) => c.startDate && c.days)
+    .map((c) => ({ a: diffDays(dates[0], c.startDate), b: diffDays(dates[0], addDays(c.startDate, c.days - 1)), drug: c.drug }))
+    .filter((r) => r.b >= 0 && r.a <= dates.length - 1)
+    .map((r) => ({ ...r, a: Math.max(0, r.a), b: Math.min(dates.length - 1, r.b) }));
+
+  // Readings are joined in date order across any gaps rather than broken at
+  // every missing day. Peak flow is taken weekly, so breaking at gaps left each
+  // reading stranded between two nulls and the lane drew a run of move commands
+  // and no line at all. The x position of every point is still exactly its date.
+  const shape = (vals, lo, hi, top) => {
+    const pts = [];
+    vals.forEach((v, i) => v != null && pts.push([i, v]));
+    if (pts.length < 2) return null;
+    const nums = pts.map((q) => q[1]);
+    const min = lo != null ? lo : Math.min(...nums);
+    const max = hi != null ? hi : Math.max(...nums);
+    const y = (v) => top + LH - ((v - min) / (max - min || 1)) * LH;
+    const line = pts.map((q, i) => (i ? "L" : "M") + x(q[0]).toFixed(1) + " " + y(q[1]).toFixed(1)).join(" ");
+    return {
+      line,
+      area: line + ` L${x(pts[pts.length - 1][0]).toFixed(1)} ${top + LH} L${x(pts[0][0]).toFixed(1)} ${top + LH} Z`,
+      pts: pts.map((q) => [x(q[0]), y(q[1])]),
+    };
+  };
+
+  const SPANS = [{ v: 90, label: "90d" }, { v: 180, label: "6m" }, { v: 365, label: "1y" }];
+
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span className="ttl">
+          Everything together
+          <Info title="Everything together">
+            <p>
+              One date across the bottom, and every measure you keep in its own lane above it. Shaded columns are
+              episodes; the bars underneath are antibiotic courses.
+            </p>
+            <p>
+              It is here so you can see whether things move together, which is a question only you can answer about
+              your own body. Deliberately there is no correlation figure attached to it.
+            </p>
+            <h4>Why no number</h4>
+            <p>
+              With this many measures there are around two hundred possible pairings, and roughly ten of them will
+              look convincing by chance in a log with nothing real in it at all. A number would make coincidence
+              look like a finding.
+            </p>
+            <p>
+              Reading it the other way round is safer: pick something you already suspect, and see whether the
+              picture supports it.
+            </p>
+          </Info>
+        </span>
+        <Seg options={SPANS} value={span} onChange={onSpan} small />
+      </div>
+
+      <div className="scrollx">
+        <svg className="chart" viewBox={`0 0 ${W} ${H}`} width={W} style={{ maxWidth: "100%" }}>
+          {bands.map((b) => (
+            <rect
+              key={"b" + b.id}
+              x={x(b.a) - bw / 2}
+              y={0}
+              width={Math.max(1.5, (b.b - b.a + 1) * bw)}
+              height={TOP + LANES.length * (LH + GAP) - GAP + 4}
+              fill="#F2C9C0"
+              opacity="0.5"
+            />
+          ))}
+
+          {LANES.map((lane, n) => {
+            const top = laneTop(n);
+            const vals = series[lane.key];
+            return (
+              <g key={lane.key}>
+                <line x1={L} x2={W - R} y1={top + LH} y2={top + LH} stroke="#DCE4EA" strokeWidth="1" />
+                <text className="ct" x={L} y={top - 4}>{lane.label}</text>
+                {lane.kind === "sputum"
+                  ? vals.map((v, i) =>
+                      v == null ? null : (
+                        <rect
+                          key={i}
+                          x={x(i) - bw / 2}
+                          y={top + LH - Math.max(4, ((v + 1) / 8) * LH)}
+                          width={Math.max(1, bw * 0.9)}
+                          height={Math.max(4, ((v + 1) / 8) * LH)}
+                          fill={SPUTUM[v].hex}
+                          rx={bw > 3 ? 1 : 0}
+                        />
+                      )
+                    )
+                  : (() => {
+                    const sh = shape(vals, lane.lo, lane.hi, top);
+                    if (!sh) return null;
+                    return (
+                      <>
+                        {lane.kind === "area" && <path d={sh.area} fill={lane.col} opacity="0.16" />}
+                        <path
+                          d={sh.line}
+                          fill="none"
+                          stroke={lane.col}
+                          strokeWidth="1.8"
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                        />
+                        {/* a sparse lane is a handful of readings, and the dots say so
+                            rather than implying a continuous measurement */}
+                        {sh.pts.length <= 45 &&
+                          sh.pts.map((q, i) => (
+                            <circle key={i} cx={q[0]} cy={q[1]} r="2" fill={lane.col} />
+                          ))}
+                      </>
+                    );
+                  })()}
+              </g>
+            );
+          })}
+
+          {runs.map((r, i) => (
+            <rect
+              key={"c" + i}
+              x={x(r.a) - bw / 2}
+              y={H - 12}
+              width={Math.max(2, (r.b - r.a + 1) * bw)}
+              height={5}
+              rx="2.5"
+              fill="#0C6E9B"
+              opacity="0.8"
+            />
+          ))}
+          <text className="ct" x={L} y={H - 1}>{fmtShort(dates[0])}</text>
+          <text className="ct" x={W - R} y={H - 1} textAnchor="end">today</text>
+        </svg>
+      </div>
+
+      <div className="legend">
+        <span><i style={{ background: "#F2C9C0" }} />episode</span>
+        <span><i style={{ background: "#0C6E9B" }} />antibiotics</span>
+      </div>
+    </div>
+  );
+}
+
+// What each antibiotic has actually done for you, pooled across every course of
+// it. One course is an anecdote; four of the same drug across four episodes is
+// the nearest thing to evidence one person can hold, and it is the single most
+// useful thing to put in front of whoever does your prescribing.
+function DrugHistory({ courses, days }) {
+  const rows = useMemo(() => drugHistory(courses, days), [courses, days]);
+  const rated = rows.filter((r) => r.n >= 1);
+  if (!rated.length) return null;
+  const enough = rows.some((r) => r.n >= 2);
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span className="ttl">
+          What has worked
+          <Info title="What has worked">
+            <p>Every course you have recorded, grouped by drug.</p>
+            <p>
+              <strong>Eased by</strong> is read out of your day-by-day entries: the first day a symptom that was
+              present when you started the course was rated lower. It is not something you were asked to judge
+              afterwards.
+            </p>
+            <p>
+              <strong>Doses taken</strong> matters as much as the outcome. A drug that looks like it failed on
+              sixty per cent of the doses has not really been tried.
+            </p>
+            <p>
+              These are your own courses in your own body, and there are only a handful of them. Nothing here
+              adjusts for how ill you were each time, and a drug kept for the worst episodes will look worse than
+              one used for mild ones. Take it as a record to discuss, not a ranking.
+            </p>
+          </Info>
+        </span>
+        <span className="hint">{rows.length} drug{rows.length === 1 ? "" : "s"}</span>
+      </div>
+
+      <div className="drugs">
+        {rows.map((r) => (
+          <div className="drug" key={r.drug}>
+            <div className="dh">
+              <b>{r.drug}</b>
+              <span>{r.n} course{r.n === 1 ? "" : "s"}</span>
+            </div>
+            <div className="dstats">
+              <span>
+                <em>{r.easedMedian != null ? `day ${r.easedMedian}` : "—"}</em>
+                eased by
+              </span>
+              <span>
+                <em>{r.takenMedian != null ? `${r.takenMedian}%` : "—"}</em>
+                doses taken
+              </span>
+              <span>
+                <em>
+                  {r.rated
+                    ? `${r.tally.resolved}/${r.rated}`
+                    : "—"}
+                </em>
+                cleared it
+              </span>
+            </div>
+            {r.rated > 0 && (
+              <div className="dbar">
+                {["resolved", "partial", "failed"].map((k) =>
+                  r.tally[k] ? (
+                    <i key={k} className={k} style={{ flex: r.tally[k] }} title={k} />
+                  ) : null
+                )}
+              </div>
+            )}
+            {r.notes.length > 0 && <div className="dnote">{r.notes.join(" · ")}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div className="note" style={{ marginTop: 12 }}>
+        {enough
+          ? "Read the dose column alongside the outcome. A course you only half took has not been given a fair run."
+          : "One course each so far. This gets useful once you have taken the same drug more than once."}
+      </div>
+    </div>
+  );
+}
+
+// How much warning your own body actually gives you. Not a prediction — a
+// measurement of what already happened, every time it happened.
+function LeadTime({ days, episodes }) {
+  const sputum = useMemo(
+    () => leadTimes(days, episodes, (d) => (d.sputum ? d.sputum.color : null), (v, b) => v >= b + 2),
+    [days, episodes]
+  );
+  const peak = useMemo(
+    () =>
+      leadTimes(
+        days,
+        episodes,
+        (d) => (d.peakFlow !== "" && !isNaN(parseFloat(d.peakFlow)) ? parseFloat(d.peakFlow) : null),
+        (v, b) => v <= b * 0.9
+      ),
+    [days, episodes]
+  );
+  const rows = [
+    { label: "Sputum turned", data: sputum, unit: "two shades darker" },
+    { label: "Peak flow fell", data: peak, unit: "a tenth below your usual" },
+  ].filter((r) => r.data.length >= 2);
+
+  if (!rows.length) {
+    return (
+      <div className="card">
+        <div className="card-t"><span>How much warning you get</span></div>
+        <div className="note">
+          Once three or four episodes have been through the log, this works out how many days your sputum and your
+          peak flow moved before each one started. That number is worth knowing: it is the difference between
+          ringing your team and waiting another day.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card">
+      <div className="card-t">
+        <span className="ttl">
+          How much warning you get
+          <Info title="How much warning you get">
+            <p>
+              For each episode the app walks backwards from the day it opened, and counts how many days running
+              the measure had already left your settled baseline.
+            </p>
+            <p>
+              It stops at the first day that was back to normal, so what you get is the run leading straight into
+              it rather than any blip in the fortnight before.
+            </p>
+            <p>
+              Baseline is the median of your well days over the previous four months, worked out separately for
+              each episode so a slow change over years does not flatten it.
+            </p>
+            <p>This describes what already happened. It does not predict the next one.</p>
+          </Info>
+        </span>
+      </div>
+      {rows.map((r) => (
+        <div className="insight" key={r.label} style={{ marginTop: 0 }}>
+          <b>{r.label} {median(r.data.map((d) => d.days))} day
+          {median(r.data.map((d) => d.days)) === 1 ? "" : "s"} early</b>
+          <br />
+          Median across {r.data.length} episode{r.data.length === 1 ? "" : "s"} where it ran {r.unit} before the day
+          you marked yourself unwell.
+        </div>
+      ))}
+      <div className="note" style={{ marginTop: 11 }}>
+        Only episodes with enough settled days logged beforehand are counted, so this can be based on fewer
+        episodes than you have had.
+      </div>
+    </div>
+  );
+}
+
 function CarePayoff({ days, episodes, regimen }) {
   const stat = useMemo(() => {
     if (episodes.length < 2) return null;
@@ -5348,6 +5867,9 @@ function TrendsView({ state, episodes }) {
   const days = state.days;
   const keys = Object.keys(days).sort();
   const today = todayISO();
+  // the timeline opens on six months: long enough for a couple of episodes to sit
+  // in it, short enough that a day is still a visible width on a phone
+  const [span, setSpan] = useState(180);
 
   const window30 = useMemo(() => {
     const arr = [];
@@ -5444,6 +5966,20 @@ function TrendsView({ state, episodes }) {
           Counted over the {adherence.logged} days you logged.
         </div>
       </div>
+
+      <Timeline
+        days={days}
+        episodes={episodes}
+        courses={state.courses}
+        regimen={state.regimen}
+        track={state.track}
+        span={span}
+        onSpan={setSpan}
+      />
+
+      <LeadTime days={days} episodes={episodes} />
+
+      <DrugHistory courses={state.courses} days={days} />
 
       <YearOnYear episodes={episodes} />
 
