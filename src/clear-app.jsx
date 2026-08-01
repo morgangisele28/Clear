@@ -158,8 +158,14 @@ const CSS = `
 .sky.compact{padding:calc(20px + env(safe-area-inset-top)) 0 50px;}
 .sky-in{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 20px;}
 .sky-title{display:flex;align-items:baseline;justify-content:space-between;color:#fff;gap:12px;}
-.sky-title h1{margin:0;font-size:16px;font-weight:600;letter-spacing:-0.01em;}
-.sky-title .sub{font-size:8.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;opacity:.72;}
+/* the page title had been sitting smaller than the card titles below it, which
+   is the hierarchy upside down */
+.sky-title h1{margin:0;font-size:23px;font-weight:600;letter-spacing:-0.03em;}
+.sky-title .sub{font-size:8.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;opacity:.72;
+  white-space:nowrap;}
+/* the strapline is decoration next to a title this size; on a narrow phone it
+   wrapped to two lines rather than shrink the title back down */
+@media (max-width:400px){.sky-title .sub{display:none;}}
 
 /* ---------- week ---------- */
 .skyacts{display:flex;align-items:center;gap:8px;}
@@ -1001,7 +1007,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.7.3";
+const BUILD = "3.7.4";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
