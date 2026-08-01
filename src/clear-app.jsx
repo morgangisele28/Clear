@@ -1007,7 +1007,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.7.4";
+const BUILD = "3.8";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;

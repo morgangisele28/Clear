@@ -3,9 +3,13 @@
  *
  *   node build/icon.mjs
  *
- * The icon is a Bricolage "C" on the same sky the app opens with. The letter is
- * drawn with the very font the app already carries, pulled straight out of the
+ * If build/icon-source.{png,jpg,jpeg,webp} exists, that image is used, scaled to
+ * cover a square. Otherwise the icon is a Bricolage "C" on the same sky the app
+ * opens with, drawn with the very font the app already carries, pulled out of the
  * @font-face block in the source so the two can never drift apart.
+ *
+ * iOS masks the icon into a squircle and loses roughly a tenth at each corner, so
+ * keep anything that matters away from the edges of the source.
  *
  * Four copies of the icon live in the template: the apple-touch-icon, the
  * favicon, and two entries in the runtime manifest. All four are replaced.
@@ -17,6 +21,10 @@ import { fileURLToPath } from "url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(ROOT, "src", "clear-app.jsx");
 const TEMPLATE = join(ROOT, "build", "template.html");
+
+const artwork = ["png", "jpg", "jpeg", "webp"]
+  .map((ext) => join(ROOT, "build", "icon-source." + ext))
+  .find(existsSync);
 
 let chromium;
 try {
@@ -38,6 +46,21 @@ if (!face) {
 // A single letter at icon size wants a simpler ramp than the app header, which
 // has six stops and fades to canvas at the very bottom. Fading to near-white
 // under the letter would eat the bottom of the C on a light home screen.
+// Inlined rather than linked: setContent gives the page an opaque origin, which
+// cannot fetch a file:// subresource, and the render came out blank.
+const artworkData = artwork
+  ? "data:image/" +
+    (artwork.endsWith(".png") ? "png" : artwork.endsWith(".webp") ? "webp" : "jpeg") +
+    ";base64," +
+    readFileSync(artwork).toString("base64")
+  : null;
+
+const artworkPage = (px) => `<!doctype html><meta charset="utf-8"><style>
+*{margin:0;padding:0;}
+html,body{width:${px}px;height:${px}px;overflow:hidden;}
+.tile{width:${px}px;height:${px}px;background:#3E9BD5 center/cover no-repeat url("${artworkData}");}
+</style><div class="tile"></div>`;
+
 const page_ = (px) => `<!doctype html><meta charset="utf-8"><style>
 ${face[0]}
 *{margin:0;padding:0;}
@@ -61,12 +84,33 @@ const browser = await chromium.launch(
   existsSync("/opt/pw-browsers/chromium") ? { executablePath: "/opt/pw-browsers/chromium" } : {}
 );
 
-const render = async (px) => {
+// The 512 is a photograph, and PNG stores it about five times larger than JPEG
+// does for no visible gain at icon size. It goes in as JPEG; the 180, which is
+// also the favicon and the apple-touch-icon, stays PNG where support is oldest.
+const render = async (px, type = "png") => {
   const ctx = await browser.newContext({ viewport: { width: px, height: px }, deviceScaleFactor: 1 });
   const p = await ctx.newPage();
-  await p.setContent(page_(px), { waitUntil: "load" });
+  await p.setContent(artwork ? artworkPage(px) : page_(px), { waitUntil: "load" });
   await p.evaluate(() => document.fonts.ready);
   await p.waitForTimeout(250);
+  // Artwork is used as given; the ink-centring pass below is only meaningful for
+  // the drawn letter.
+  if (artwork) {
+    await p.evaluate(
+      (src) =>
+        new Promise((ok, no) => {
+          const im = new Image();
+          im.onload = ok;
+          im.onerror = () => no(new Error("icon source failed to decode"));
+          im.src = src;
+        }),
+      artworkData
+    );
+    await p.waitForTimeout(150);
+    const buf0 = await p.screenshot(type === "jpeg" ? { type: "jpeg", quality: 88 } : { type: "png" });
+    await ctx.close();
+    return buf0.toString("base64");
+  }
   // A C is centred when its ink is centred, not when its em box is. Measure the
   // painted pixels and shift by whatever is left over, which also absorbs the
   // optical overshoot at the top and bottom of a round glyph.
@@ -106,22 +150,32 @@ const render = async (px) => {
 };
 
 const small = await render(180);
-const large = await render(512);
+const large = await render(512, artwork ? "jpeg" : "png");
 await browser.close();
 
 /* The template holds them in a fixed order: apple-touch-icon, favicon, then the
    manifest's 512 and 180. Swap by position so a re-run is idempotent. */
 let html = readFileSync(TEMPLATE, "utf8");
-const want = [small, small, large, small];
+// the whole data URI is swapped, prefix included, because the 512 may not be the
+// same media type as the rest
+const want = [
+  { b64: small, mime: "png" },
+  { b64: small, mime: "png" },
+  { b64: large, mime: artwork ? "jpeg" : "png" },
+  { b64: small, mime: "png" },
+];
 let i = 0;
-html = html.replace(/base64,[A-Za-z0-9+/=]{500,}/g, (m) => {
+html = html.replace(/data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/=]{500,}/g, (m) => {
   const next = want[i++];
-  return next ? "base64," + next : m;
+  return next ? `data:image/${next.mime};base64,${next.b64}` : m;
 });
 if (i !== 4) {
   console.error(`expected 4 icons in the template, replaced ${i}`);
   process.exit(1);
 }
 writeFileSync(TEMPLATE, html);
-console.log(`icon written into build/template.html  (180px ${small.length}b64, 512px ${large.length}b64)`);
+console.log(
+  `icon written into build/template.html from ${artwork ? artwork.replace(ROOT + "/", "") : "the drawn C"}` +
+    `  (180px ${small.length}b64, 512px ${large.length}b64)`
+);
 console.log("now run:  npm run build");
