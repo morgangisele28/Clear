@@ -461,6 +461,14 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .care-row+.care-row{box-shadow:inset 0 1px 0 var(--hair-2);}
 .care-row .nm{flex:1;font-size:14px;color:var(--ink);letter-spacing:-0.01em;}
 .care-row .nm small{display:block;font-size:11px;color:var(--faint);margin-top:1px;}
+/* the delete sits under the row and is uncovered by dragging it aside; pan-y
+   leaves the vertical axis to the scroller so the list still scrolls normally */
+.swipewrap{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
+.swipedel{position:absolute;top:0;right:0;bottom:0;width:88px;border:none;padding:0;
+  background:var(--alarm);color:#fff;font-size:12.5px;font-weight:600;letter-spacing:0.01em;
+  display:flex;align-items:center;justify-content:center;border-radius:0 14px 14px 0;}
+.swipebody{position:relative;touch-action:pan-y;will-change:transform;}
+.swipewrap .planrow{margin-bottom:0;}
 .planrow{background:#fff;border-radius:14px;padding:13px;margin-bottom:9px;}
 /* the modal is already white, so the rows need their own ground to sit on */
 .modal .planrow{background:var(--paper);}
@@ -1059,7 +1067,7 @@ const AQI_BANDS = [
 const aqiBand = (v) => AQI_BANDS.find((b) => v <= b.max) || AQI_BANDS[AQI_BANDS.length - 1];
 
 const STORE_KEY = "bxlog-v1";
-const BUILD = "3.9.1";
+const BUILD = "3.10";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -3318,6 +3326,86 @@ function PeakFlowReminder({ lastPF, date, onSave, onDismiss }) {
   );
 }
 
+// Swipe a row left to reveal Delete, or throw it further to delete outright, the
+// way a mail list behaves. The page's own day-swipe is told to keep off any row
+// wearing this (see the blocked list in onTouchStart), so the horizontal axis
+// belongs to whichever row the finger landed on and the two never fight.
+function SwipeRow({ onDelete, label, children }) {
+  const [dx, setDx] = useState(0);
+  const [glide, setGlide] = useState(false);
+  const g = useRef(null);
+  const box = useRef(null);
+  const REVEAL = 88;
+
+  const start = (e) => {
+    const t = e.touches && e.touches[0];
+    if (!t) return;
+    // Fields are not excluded, even though the gesture usually starts on one:
+    // most of this row is a text input, so skipping them would leave nothing to
+    // swipe. The axis test below decides instead — a tap still lands in the
+    // field and focuses it, and only a sideways drag becomes a swipe.
+    g.current = { x: t.clientX, y: t.clientY, from: dx, axis: null };
+    setGlide(false);
+  };
+  const move = (e) => {
+    const st = g.current;
+    const t = e.touches && e.touches[0];
+    if (!st || !t) return;
+    const ax = t.clientX - st.x;
+    const ay = t.clientY - st.y;
+    if (st.axis === null) {
+      if (Math.abs(ax) < 7 && Math.abs(ay) < 7) return;
+      st.axis = Math.abs(ax) > Math.abs(ay) * 1.2 ? "x" : "y";
+      if (st.axis === "y") {
+        g.current = null;
+        return;
+      }
+    }
+    // leftward only, and it stiffens past the reveal so the throw has to be meant
+    const raw = st.from + ax;
+    setDx(raw > 0 ? 0 : raw < -REVEAL ? -REVEAL - (-raw - REVEAL) * 0.55 : raw);
+  };
+  const end = () => {
+    const st = g.current;
+    g.current = null;
+    setGlide(true);
+    if (!st || st.axis !== "x") return;
+    const w = (box.current && box.current.offsetWidth) || 320;
+    if (-dx > w * 0.55) {
+      setDx(-w);
+      window.setTimeout(onDelete, 180);
+      return;
+    }
+    setDx(-dx > REVEAL * 0.55 ? -REVEAL : 0);
+  };
+
+  return (
+    <div className="swipewrap" ref={box}>
+      <button
+        className="swipedel"
+        aria-label={"Delete " + (label || "row")}
+        tabIndex={dx ? 0 : -1}
+        onClick={onDelete}
+      >
+        Delete
+      </button>
+      <div
+        className="swipebody"
+        onTouchStart={start}
+        onTouchMove={move}
+        onTouchEnd={end}
+        onTouchCancel={end}
+        style={{
+          transform: dx ? `translate3d(${dx}px,0,0)` : undefined,
+          transition: glide ? "transform .22s var(--ease)" : "none",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function PlanEditor({ regimen, onChange, onClose }) {
   const [draft, setDraft] = useState(() => JSON.parse(JSON.stringify(regimen)));
   const set = (i, patch) => setDraft((d) => d.map((r, k) => (k === i ? { ...r, ...patch } : r)));
@@ -3337,7 +3425,12 @@ function PlanEditor({ regimen, onChange, onClose }) {
         </Info>
       </div>
       {draft.map((r, i) => (
-        <div key={r.id} className="planrow">
+        <SwipeRow
+          key={r.id}
+          label={r.name || "treatment"}
+          onDelete={() => setDraft((d) => d.filter((_, k) => k !== i))}
+        >
+        <div className="planrow">
           <input
             className="inp"
             placeholder="Treatment name"
@@ -3365,6 +3458,7 @@ function PlanEditor({ regimen, onChange, onClose }) {
           </div>
           {!r.active && <div className="note" style={{ marginTop: 6 }}>Paused</div>}
         </div>
+        </SwipeRow>
       ))}
       <div className="btnrow" style={{ marginTop: 12 }}>
         <button className="btn" onClick={add}>Add a treatment</button>
@@ -7356,7 +7450,7 @@ function App() {
     if (!t) return;
     const el = e.target;
     const blocked =
-      el && el.closest && el.closest('input[type="range"], .scrollx, textarea, select, .week, .ribbon');
+      el && el.closest && el.closest('input[type="range"], .scrollx, textarea, select, .week, .ribbon, .swipebody');
     if (blocked) return;
     touch.current = { x: t.clientX, y: t.clientY, at: Date.now(), axis: null, dx: 0 };
   };
