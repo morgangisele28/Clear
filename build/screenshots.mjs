@@ -91,6 +91,13 @@ const PANELS = [
     imgs: ["handover.png"],
   },
   {
+    file: "clear-store-07b-together",
+    eyebrow: "Your own overlay",
+    head: "See what moves\nwith what",
+    sub: "Every measure you keep, on one date axis, with your episodes shaded through the stack and your antibiotic courses underneath. No correlation figure attached to it — with this many measures, coincidence would look like a finding. It shows you the picture and lets you decide.",
+    imgs: ["timeline.png"],
+  },
+  {
     file: "clear-store-08-patterns",
     eyebrow: "The numbers that matter",
     head: "Longer gaps.\nFewer episodes.",
@@ -317,7 +324,8 @@ if (await eps.count()) {
 }
 
 await click("Patterns");
-await page.waitForTimeout(1100);
+await page.waitForTimeout(1400);
+await card("Everything together", "timeline");
 await card("Days between episodes", "gaps");
 await card("Episodes a year", "yoy");
 
