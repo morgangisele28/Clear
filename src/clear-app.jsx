@@ -423,6 +423,17 @@ input[type=range].sl::-webkit-slider-runnable-track{height:7px;border-radius:99p
 input[type=range].sl::-webkit-slider-thumb{-webkit-appearance:none;width:21px;height:21px;border-radius:50%;background:var(--thumb);border:3px solid #fff;box-shadow:0 0 0 1px rgba(8,54,69,.14),0 2px 6px rgba(8,54,69,.16);margin-top:-7px;}
 input[type=range].sl::-moz-range-track{height:7px;border-radius:99px;background:var(--track);}
 input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;background:var(--thumb);border:3px solid #fff;}
+/* the bands stack rather than sit in a row: each needs its measure underneath it,
+   and six of them across a phone would be unreadable */
+.bloodrows{display:flex;flex-direction:column;gap:6px;margin-top:2px;}
+.bloodrow{display:flex;align-items:center;text-align:left;border:none;padding:11px 14px;border-radius:13px;
+  background:var(--paper);color:var(--ink);}
+.bloodrow.on{background:var(--alarm-soft);box-shadow:inset 0 0 0 1.5px var(--alarm);}
+.bl-tx b{display:block;font-size:13.5px;font-weight:500;letter-spacing:-0.005em;}
+.bl-tx small{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+.bloodrow.on .bl-tx small{color:var(--alarm);opacity:.85;}
+.seg.wrap{flex-wrap:wrap;}
+.seg.wrap button{flex:1 0 46%;}
 .delta{margin-top:18px;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.5;background:var(--paper);color:var(--ink-2);}
 .delta.up{background:#FDF5E7;color:#77571A;}
 .delta.down{background:#ECF5F1;color:var(--ok);}
@@ -854,11 +865,44 @@ const VOLUME = ["None", "Trace", "Scant", "Small", "Moderate", "Large", "Copious
 const VOLUME_HINT = ["", "a smear", "under a teaspoon", "a teaspoon", "a tablespoon", "two tablespoons", "more than an eggcup"];
 const TEXTURE = ["Watery", "Runny", "Thin", "Medium", "Thick", "Sticky", "Rubbery"];
 const SCALE_MAX = 6;
+// Haemoptysis is graded on how much came up over the day, which is what decides
+// urgency, and described separately by what it looked like — the two are not the
+// same question. Blood worked through mucus and blood on its own can be the same
+// volume and mean different things, and the old yes/no could hold neither.
+//
+// The volumes follow the categories in common clinical use: streaking under a
+// teaspoon, then rising bands, with roughly a teacup over 24 hours as the point
+// treated as an emergency. Anchors are household objects because nobody measures
+// this, the same reason the sputum volume scale uses them.
 const BLOOD = [
   { v: "none", label: "None" },
-  { v: "streaks", label: "Streaks" },
-  { v: "frank", label: "Frank blood" },
+  { v: "specks", label: "Specks or streaks", hint: "flecks through the phlegm" },
+  { v: "teaspoon", label: "Up to a teaspoon", hint: "about 5 ml across the day" },
+  { v: "eggcup", label: "Up to an eggcup", hint: "a teaspoon to about 50 ml" },
+  { v: "teacup", label: "Up to a teacup", hint: "50 ml or more — call today" },
+  { v: "more", label: "More than a teacup", hint: "treated as an emergency" },
 ];
+const BLOOD_LOOK = [
+  { v: "streaks", label: "Streaked through it" },
+  { v: "mixed", label: "Mixed all through" },
+  { v: "clots", label: "Clots or jelly" },
+  { v: "frank", label: "Blood on its own" },
+];
+const BLOOD_AGE = [
+  { v: "fresh", label: "Bright red" },
+  { v: "old", label: "Dark or brown" },
+];
+const bloodLabel = (v) => (BLOOD.find((b) => b.v === v) || {}).label || v;
+// reads out as a phrase for the handover paragraph and the CSV
+const bloodText = (day) => {
+  if (!day.blood || day.blood === "none") return null;
+  const bits = [bloodLabel(day.blood).toLowerCase()];
+  const look = (BLOOD_LOOK.find((b) => b.v === day.bloodLook) || {}).label;
+  if (look) bits.push(look.toLowerCase());
+  const age = (BLOOD_AGE.find((b) => b.v === day.bloodAge) || {}).label;
+  if (age) bits.push(age.toLowerCase());
+  return bits.join(", ");
+};
 const SEV = ["None", "Mild", "Moderate", "Severe"];
 const SEV_MARK = ["–", "1", "2", "3"];
 
@@ -1112,7 +1156,7 @@ const STORE_KEY = "bxlog-v1";
 // the header and the thing you tap to open it are recognisably the same object.
 const MARK = "data:image/png;base64,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";
 
-const BUILD = "3.14";
+const BUILD = "3.15";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1154,6 +1198,9 @@ const emptyDay = () => ({
   extraSupps: "",
   sputum: { color: null, volume: null, texture: null },
   blood: null,
+  bloodLook: null,
+  bloodAge: null,
+  cast: false,
   symptoms: {},
   temp: "",
   spo2: "",
@@ -1260,7 +1307,24 @@ function migrate(raw) {
     const t = todayISO();
     if (s.days[t] && s.days[t].plan) delete s.days[t].plan;
   }
-  s.v = 6;
+  // Blood was a three-step yes / streaks / frank. It becomes a volume scale with
+  // the look recorded separately. "streaks" carries over exactly; "frank" only
+  // ever meant more than streaking, so it lands on the smallest band above that
+  // and keeps "blood on its own" as the description. That is an approximation of
+  // an entry that never held a volume, not a recovered one.
+  if (fromVersion < 7) {
+    Object.keys(s.days).forEach((k) => {
+      const d = s.days[k];
+      if (d.blood === "streaks") {
+        d.blood = "specks";
+        d.bloodLook = "streaks";
+      } else if (d.blood === "frank") {
+        d.blood = "teaspoon";
+        d.bloodLook = "frank";
+      }
+    });
+  }
+  s.v = 7;
   return s;
 }
 
@@ -1868,6 +1932,51 @@ async function getAqi(loc, date, onStep) {
   return await fetchAqiDirect(loc, date);
 }
 
+// Ask the device where it is. The coordinates go to Open-Meteo for the reading
+// and are rounded before they are stored or sent — a two-decimal fix is about a
+// kilometre, which is all an air quality reading needs and rather less than a
+// health log ought to be keeping about where somebody sleeps.
+function locate() {
+  return new Promise((ok, no) => {
+    if (!navigator.geolocation) return no(new Error("This browser cannot look up your location."));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const round = (v) => Math.round(v * 100) / 100;
+        ok({ lat: round(pos.coords.latitude), lon: round(pos.coords.longitude) });
+      },
+      (e) => {
+        no(
+          new Error(
+            e && e.code === 1
+              ? "Location is switched off for this site. Turn it on in your browser settings, or search for a place instead."
+              : "Could not get a location fix. Try again, or search for a place instead."
+          )
+        );
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  });
+}
+
+// What the place is called, so the log does not read as a pair of numbers. If the
+// lookup fails the reading is still good — it just gets the coordinates as a name.
+async function placeName(lat, lon) {
+  try {
+    const r = await timedFetch(
+      `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&count=1&language=en&format=json`,
+      null,
+      5000
+    );
+    if (!r.ok) throw new Error("no name");
+    const j = await r.json();
+    const x = (j.results || [])[0];
+    if (!x) throw new Error("no name");
+    return [x.name, x.admin1].filter(Boolean).join(", ");
+  } catch (e) {
+    return `${lat}, ${lon}`;
+  }
+}
+
 async function geocode(name) {
   try {
     const r = await timedFetch(
@@ -2041,7 +2150,7 @@ function weekDigest(days, regimen) {
           SPUTUM[day.sputum.color].label.replace("\n", " ").toLowerCase() +
           (day.sputum.volume != null ? ", " + VOLUME[day.sputum.volume].toLowerCase() : "")
       );
-    if (day.blood && day.blood !== "none") bits.push("blood: " + day.blood);
+    if (bloodText(day)) bits.push("blood: " + bloodText(day));
     if (day.peakFlow) bits.push("peak flow " + day.peakFlow);
     if (day.temp) bits.push(day.temp + "C");
     if (day.spo2) bits.push("SpO2 " + day.spo2 + "%");
@@ -2225,7 +2334,7 @@ function episodeText(ep, days) {
         SPUTUM[day.sputum.color].label.replace("\n", " ").toLowerCase() +
           (day.sputum.volume != null ? ", " + VOLUME[day.sputum.volume].toLowerCase() : "")
       );
-    if (day.blood && day.blood !== "none") bits.push("blood: " + day.blood);
+    if (bloodText(day)) bits.push("blood: " + bloodText(day));
     if (day.temp) bits.push(day.temp + "C");
     if (day.spo2) bits.push("SpO2 " + day.spo2 + "%");
     if (day.peakFlow) bits.push("PF " + day.peakFlow);
@@ -2694,9 +2803,9 @@ function TrackSettings({ track, onChange, bare, unit, onUnit }) {
   );
 }
 
-function Seg({ options, value, onChange, small, alarm }) {
+function Seg({ options, value, onChange, small, alarm, wrap }) {
   return (
-    <div className={"seg" + (small ? " sm" : "") + (alarm ? " alarm" : "")}>
+    <div className={"seg" + (small ? " sm" : "") + (alarm ? " alarm" : "") + (wrap ? " wrap" : "")}>
       {options.map((o) => (
         <button
           key={o.v}
@@ -2739,6 +2848,26 @@ function AirQuality({ day, date, locations, onSet, onAddLocation }) {
       setStep("");
     } catch (e) {
       setErr(e && e.message ? e.message : "Both sources failed.");
+      setStep("");
+    }
+    setBusy(false);
+  };
+
+  const here = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      setStep("Finding you");
+      const at = await locate();
+      const name = await placeName(at.lat, at.lon);
+      const L = { name, lat: at.lat, lon: at.lon };
+      const r = await getAqi(L, date, setStep);
+      onSet({ ...r, location: name, at: new Date().toISOString() });
+      // remembered so it is one tap next time you are here
+      if (onAddLocation && !locations.some((l) => l.name === name)) onAddLocation(L);
+      setStep("");
+    } catch (e) {
+      setErr(e && e.message ? e.message : "Could not get a reading for where you are.");
       setStep("");
     }
     setBusy(false);
@@ -2798,6 +2927,14 @@ function AirQuality({ day, date, locations, onSet, onAddLocation }) {
         </div>
         <button className="btn sm" disabled={busy} onClick={() => pull()}>
           {busy ? "…" : aqi ? "Refresh" : "Fetch"}
+        </button>
+      </div>
+
+      {/* Refresh re-reads the saved place; this asks the phone where you actually
+          are, which is a different question and was the missing one. */}
+      <div className="btnrow" style={{ marginTop: 10 }}>
+        <button className="btn sm" disabled={busy} onClick={here}>
+          {busy ? "…" : "Use where I am now"}
         </button>
       </div>
 
@@ -4862,32 +4999,83 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
       {sputumRecorded && (
         <>
-          <div className="rowlab">Any blood in it</div>
+          <Toggle
+            on={!!day.cast}
+            label="Coughed up a plug or cast"
+            onClick={() => up({ cast: !day.cast })}
+          />
+
+          <div className="rowlab">
+            Any blood in it
+            <Info title="Blood in your sputum">
+              <p>
+                Two separate questions: how much came up across the whole day, and what it looked like. The
+                amount is what decides urgency; the description is what your team will ask about.
+              </p>
+              <p>
+                The bands follow the categories in common use — streaking under a teaspoon, rising through to
+                roughly a teacup in twenty-four hours, which is the point treated as an emergency. Household
+                measures because nobody measures this properly, the same reason the volume scale uses them.
+              </p>
+              <p>
+                These are general reference points, not a plan written for you. If you have been given your own
+                thresholds, use those.
+              </p>
+            </Info>
+          </div>
           <Seg
             options={[
               { v: "none", label: "No" },
               { v: "yes", label: "Yes" },
             ]}
             value={day.blood === "none" ? "none" : day.blood ? "yes" : null}
-            onChange={(v) => up({ blood: v === "yes" ? "streaks" : v })}
+            onChange={(v) =>
+              up(v === "yes" ? { blood: day.blood && day.blood !== "none" ? day.blood : "specks" } : { blood: v, bloodLook: null, bloodAge: null })
+            }
             small
             alarm={!!day.blood && day.blood !== "none"}
           />
           {day.blood && day.blood !== "none" && (
             <>
+              <div className="rowlab">How much, across the day</div>
+              <div className="bloodrows">
+                {BLOOD.filter((x) => x.v !== "none").map((x) => (
+                  <button
+                    key={x.v}
+                    className={"bloodrow" + (day.blood === x.v ? " on" : "")}
+                    aria-pressed={day.blood === x.v}
+                    onClick={() => up({ blood: x.v })}
+                  >
+                    <span className="bl-tx">
+                      <b>{x.label}</b>
+                      <small>{x.hint}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rowlab">What it looked like</div>
               <Seg
-                options={[
-                  { v: "streaks", label: "Streaks" },
-                  { v: "frank", label: "Frank blood" },
-                ]}
-                value={day.blood}
-                onChange={(v) => up({ blood: v || "streaks" })}
+                options={BLOOD_LOOK}
+                value={day.bloodLook}
+                onChange={(v) => up({ bloodLook: v })}
                 small
-                alarm
+                wrap
               />
-              {day.blood === "frank" && (
+
+              <div className="rowlab">Colour</div>
+              <Seg options={BLOOD_AGE} value={day.bloodAge} onChange={(v) => up({ bloodAge: v })} small />
+
+              {(day.blood === "teacup" || day.blood === "more") && (
                 <div className="banner red">
-                  Frank blood is worth a same-day call to your respiratory team, not a wait and see.
+                  {day.blood === "more"
+                    ? "This much blood is treated as an emergency. Ring for urgent help now rather than waiting to see how it goes."
+                    : "This much in a day is worth ringing your team today, not waiting it out."}
+                </div>
+              )}
+              {day.blood === "eggcup" && (
+                <div className="banner">
+                  Worth telling your team about today, and worth noting whether it is still going tomorrow.
                 </div>
               )}
             </>
