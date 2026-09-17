@@ -31,6 +31,9 @@ export default defineConfig({
     // root, so the test runner is anchored back there explicitly.
     root: resolve(import.meta.dirname, "."),
     globals: true,
+    // Every test here is a pure function on plain data, so nothing can leak
+    // between files and a worker per file is wasted startup.
+    isolate: false,
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
