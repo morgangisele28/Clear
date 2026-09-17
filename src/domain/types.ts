@@ -95,7 +95,12 @@ export interface SputumReading {
 export interface AqiReading {
   value: number | null;
   pm25: number | null;
+  /** Where the number came from, shown so a hand-typed one is not mistaken for a lookup. */
   source: string;
+  /** The place it was read for, as the person named it. */
+  location?: string;
+  /** When it was fetched, as an instant. Unlike a day, this is a moment in time. */
+  at?: string;
 }
 
 /**

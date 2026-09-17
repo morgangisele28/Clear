@@ -112,6 +112,13 @@ export function bloodLabel(v: BloodVolume): string {
   return BLOOD_VOLUMES.find((b) => b.v === v)?.label ?? v;
 }
 
+/** Where a haemoptysis volume sits on the scale, so two days can be compared. */
+export function bloodRank(v: BloodVolume | null): number {
+  if (v == null) return 0;
+  const i = BLOOD_VOLUMES.findIndex((b) => b.v === v);
+  return i < 0 ? 0 : i;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Symptoms                                                                   */
 /* -------------------------------------------------------------------------- */
