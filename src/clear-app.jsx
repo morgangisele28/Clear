@@ -80,8 +80,8 @@ const CSS = `
   --sky-4:#BDEBFB;
   --ink:#083645;
   --ink-2:#3A5460;
-  --muted:#7E8E96;
-  --faint:#A9B7BD;
+  --muted:#566A74;
+  --faint:#73858E;
   --hair:rgba(8,54,69,.10);
   --hair-2:rgba(8,54,69,.06);
   --canvas:#EFF2F6;
@@ -102,21 +102,21 @@ const CSS = `
 }
 *{box-sizing:border-box;}
 .bx{font-family:var(--body);background:var(--canvas);color:var(--ink);min-height:100vh;
-  -webkit-font-smoothing:antialiased;font-size:14.5px;line-height:1.5;font-weight:400;}
+  -webkit-font-smoothing:antialiased;font-size:16px;line-height:1.5;font-weight:400;}
 .bx h1,.bx .num,.bx .big,.bx .v,.bx .ep-d,.bx .sl-head b,.bx .stat .v,.bx .vit input,.bx .ring-n{font-family:var(--display);}
 .bx button{font-family:var(--body);cursor:pointer;transition:transform .3s var(--ease),background .25s var(--ease),color .25s var(--ease),box-shadow .25s var(--ease);}
 .bx button:active{transform:scale(.99);}
-.bx input,.bx select,.bx textarea{font-family:var(--body);font-size:14.5px;}
+.bx input,.bx select,.bx textarea{font-family:var(--body);font-size:16px;}
 .bx input[type=number]{-moz-appearance:textfield;appearance:textfield;}
 .bx input[type=number]::-webkit-outer-spin-button,
 .bx input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-.eyebrow{font-family:var(--body);font-size:9.5px;font-weight:600;letter-spacing:0.17em;text-transform:uppercase;}
+.eyebrow{font-family:var(--body);font-size:11.5px;font-weight:600;letter-spacing:0.102em;text-transform:uppercase;}
 
 /* ---------- sky ---------- */
 /* the sheet is pulled up 26px to round its corner over the sky, so the bottom
    padding here has to clear that before it counts as breathing room, or the
    glance strip gets its numbers sliced off by the sheet edge */
-.sky{position:relative;overflow:hidden;padding:calc(20px + env(safe-area-inset-top)) 0 56px;
+.sky{position:relative;overflow:hidden;padding:calc(16px + env(safe-area-inset-top)) 0 48px;
   background:linear-gradient(176deg,#0A5F97 0%,var(--sky-1) 32%,#1793CE 64%,var(--sky-2) 86%,var(--sky-3) 95%,var(--canvas) 100%);}
 .sky::before{content:"";position:absolute;top:-170px;right:-130px;width:400px;height:400px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,calc(.20 + var(--clarity,0) * .34)) 0%,
@@ -155,7 +155,7 @@ const CSS = `
 /* same arithmetic as .sky above: the sheet is pulled up 26px over this, so the
    bottom padding has to clear that before any of it counts as breathing room.
    28px left two, and the sheet edge cut straight under the header. */
-.sky.compact{padding:calc(20px + env(safe-area-inset-top)) 0 50px;}
+.sky.compact{padding:calc(16px + env(safe-area-inset-top)) 0 46px;}
 .sky-in{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 20px;}
 .sky-title{display:flex;align-items:baseline;justify-content:space-between;color:#fff;gap:12px;}
 /* the page title had been sitting smaller than the card titles below it, which
@@ -166,7 +166,7 @@ const CSS = `
    so a box-centred mark reads as sitting low next to the wordmark */
 .sky-title h1 .mark{width:31px;height:31px;flex:0 0 auto;margin:-4px -2px 0 -4px;
   filter:drop-shadow(0 1px 2px rgba(8,54,69,.28));}
-.sky-title .sub{font-size:8.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;opacity:.72;
+.sky-title .sub{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;opacity:.72;
   white-space:nowrap;}
 /* the strapline is decoration next to a title this size; on a narrow phone it
    wrapped to two lines rather than shrink the title back down */
@@ -177,15 +177,18 @@ const CSS = `
 /* how long since the last backup, at a glance. Bright on purpose: the header is a
    blue gradient, and the ink greens and reds used elsewhere disappear against it. */
 .bpill{display:flex;align-items:center;gap:6px;flex:0 0 auto;border:none;border-radius:99px;
-  padding:8px 11px 8px 10px;background:rgba(8,54,69,.26);
+  min-height:36px;padding:8px 11px 8px 10px;background:rgba(8,54,69,.26);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
-.bpill .bd{width:8px;height:8px;border-radius:50%;display:block;background:#fff;flex:0 0 auto;}
-.bpill .bt{font-size:9px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;
+.bpill .bi{display:block;flex:0 0 auto;color:#fff;}
+.bpill .bt{font-size:11px;font-weight:600;letter-spacing:0.078em;text-transform:uppercase;
   color:rgba(255,255,255,.82);line-height:1;white-space:nowrap;}
-.bpill.ok .bd{background:#6BDCA0;box-shadow:0 0 8px 1px rgba(107,220,160,.85);}
-.bpill.warn .bd{background:#FFC24D;box-shadow:0 0 8px 1px rgba(255,194,77,.85);}
-.bpill.bad .bd{background:#FF7A7A;box-shadow:0 0 8px 1px rgba(255,122,122,.85);}
-.iconbtn{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;
+.bpill.ok .bi{color:#7FE6AE;filter:drop-shadow(0 0 5px rgba(107,220,160,.7));}
+.bpill.warn .bi{color:#FFC24D;filter:drop-shadow(0 0 5px rgba(255,194,77,.7));}
+.bpill.bad .bi{color:#FF9A9A;filter:drop-shadow(0 0 5px rgba(255,122,122,.7));}
+.bpill.bad{background:rgba(120,20,30,.42);}
+.bpill.bad .bt{color:#fff;}
+.bpill.none .bi{color:rgba(255,255,255,.8);}
+.iconbtn{width:40px;height:40px;flex:0 0 auto;border:none;border-radius:50%;
   background:rgba(8,54,69,.26);color:#fff;font-family:var(--display);font-size:16px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
@@ -206,7 +209,7 @@ const CSS = `
    rather than only the family — fixing the family alone still left the text
    semibold and tracked like a heading. */
 .modal,.modal p,.modal li{font-family:var(--body);}
-.modal{font-size:14.5px;font-weight:400;letter-spacing:normal;line-height:1.5;}
+.modal{font-size:16px;font-weight:400;letter-spacing:normal;line-height:1.5;}
 .modal{position:fixed;left:0;right:0;bottom:0;z-index:81;max-width:720px;margin:0 auto;
   background:#fff;border-radius:26px 26px 0 0;max-height:86vh;overflow-y:auto;
   /* the tab bar sits over the foot of the sheet, so the last paragraph needs room to
@@ -215,39 +218,45 @@ const CSS = `
   box-shadow:0 -20px 50px -20px rgba(8,54,69,.5);animation:slideup .38s var(--ease) both;}
 @keyframes slideup{from{transform:translate3d(0,40px,0);opacity:0;}to{transform:none;opacity:1;}}
 .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
-.wordmark{display:block;font-family:var(--display);font-size:12px;font-weight:600;
-  letter-spacing:0.24em;text-transform:uppercase;color:var(--accent);margin-bottom:7px;}
+.wordmark{display:block;font-family:var(--display);font-size:13.5px;font-weight:600;
+  letter-spacing:0.144em;text-transform:uppercase;color:var(--accent);margin-bottom:7px;}
 .modal-head h3{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-0.03em;
   margin:0;line-height:1.15;}
-.modal-x{width:34px;height:34px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
+.modal-x{width:42px;height:42px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
   color:var(--ink-2);font-size:17px;display:flex;align-items:center;justify-content:center;padding:0;}
 /* a close for a card that lives in the page rather than over it: smaller than
    the modal's, and set back so it reads as optional next to the title */
 .cardx{width:28px;height:28px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
-  color:var(--faint);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;
+  color:var(--faint);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;
   padding:0;margin:-4px -4px -4px 0;}
 .pts{margin:22px 0 0;}
 .pt{display:flex;gap:13px;padding:13px 0;}
 .pt+.pt{box-shadow:inset 0 1px 0 var(--hair-2);}
 .pt .n{width:26px;height:26px;flex:0 0 auto;border-radius:50%;background:var(--lime);color:#083645;
-  font-family:var(--display);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.pt .tx{flex:1;font-size:14px;line-height:1.5;color:var(--ink-2);}
-.pt .tx b{display:block;font-weight:600;color:var(--ink);font-size:14.5px;margin-bottom:2px;letter-spacing:-0.01em;}
-.fine{font-size:12px;line-height:1.6;color:var(--muted);margin-top:18px;}
+  font-family:var(--display);font-size:14.5px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.pt .tx{flex:1;font-size:15px;line-height:1.5;color:var(--ink-2);}
+.pt .tx b{display:block;font-weight:600;color:var(--ink);font-size:16px;margin-bottom:2px;letter-spacing:-0.01em;}
+.fine{font-size:13.5px;line-height:1.6;color:var(--muted);margin-top:18px;}
 .more{margin-top:16px;}
-.more summary{font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;padding:10px 0;}
+.more summary{font-size:14.5px;font-weight:600;color:var(--accent);cursor:pointer;list-style:none;padding:10px 0;}
 .more summary::-webkit-details-marker{display:none;}
 .more summary::after{content:" \u203a";}
-.about h4{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-0.015em;
+.about h4{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.015em;
   margin:20px 0 7px;color:var(--ink);}
 .about h4:first-of-type{margin-top:4px;}
-.about p{font-size:13px;line-height:1.65;color:var(--ink-2);margin:0 0 8px;}
+.about p{font-size:14.5px;line-height:1.65;color:var(--ink-2);margin:0 0 8px;}
 .about strong{font-weight:600;color:var(--ink);}
-.week{display:flex;align-items:flex-start;justify-content:space-between;margin-top:20px;gap:2px;}
+.week{display:flex;align-items:flex-start;justify-content:space-between;margin-top:14px;gap:2px;}
 .wd{flex:1;background:none;border:none;padding:2px 0 4px;color:rgba(255,255,255,.62);
   display:flex;flex-direction:column;align-items:center;gap:3px;}
-.wd .dow{font-size:8.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;}
-.wd .num{font-size:15px;font-weight:400;letter-spacing:0;transition:font-size .3s var(--ease);}
+.wd .dow{font-size:11px;font-weight:600;letter-spacing:0.096em;text-transform:uppercase;}
+@media (max-width:359px){
+  .wd .dow{font-size:10px!important;letter-spacing:0.04em!important;}
+  /* no room for the age in words beside Month and the gear: the tray keeps its colour */
+  .bpill .bt{display:none;}
+  .bpill{padding:8px 11px!important;}
+}
+.wd .num{font-size:16px;font-weight:400;letter-spacing:0;transition:font-size .3s var(--ease);}
 .wd .mark{width:3px;height:3px;border-radius:50%;margin-top:4px;background:transparent;}
 .wd.has .mark{background:rgba(255,255,255,.55);}
 .wd.ill .mark{background:#FFC24D;box-shadow:0 0 6px 1px rgba(255,194,77,.75);}
@@ -258,7 +267,7 @@ const CSS = `
 
 /* ---------- fork ---------- */
 .weekrow{display:flex;align-items:center;gap:4px;margin-top:20px;}
-.wnav{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:rgba(255,255,255,.55);
+.wnav{width:34px;height:46px;flex:0 0 auto;border:none;background:none;color:rgba(255,255,255,.55);
   font-size:17px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:9px;}
 /* The arrows keep their full tap target but push their glyphs out to the edges,
    so the week strip's leftmost ink lands on the same 20px line as the wordmark
@@ -266,19 +275,19 @@ const CSS = `
 .weekrow .wnav:first-child{justify-content:flex-start;}
 .weekrow .wnav:last-child{justify-content:flex-end;}
 .wnav:disabled{opacity:.2;}
-.monthbtn{border:none;background:rgba(8,54,69,.24);color:#fff;font-size:9px;font-weight:600;
-  letter-spacing:0.16em;text-transform:uppercase;padding:6px 12px;border-radius:99px;
+.monthbtn{border:none;background:rgba(8,54,69,.24);color:#fff;font-size:11px;font-weight:600;
+  letter-spacing:0.096em;text-transform:uppercase;padding:8px 12px;border-radius:99px;white-space:nowrap;
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
 .cal{}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cal-head .m{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.01em;}
 .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:7px;}
-.cal-dow span{text-align:center;font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;color:var(--faint);}
+.cal-dow span{text-align:center;font-size:11px;font-weight:600;letter-spacing:0.078em;text-transform:uppercase;color:var(--faint);}
 /* pan-y hands the vertical axis back to the browser and keeps the horizontal one
    here, so dragging the grid changes month instead of nudging the page sideways */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;touch-action:pan-y;}
 .cal-cell{position:relative;aspect-ratio:1;border:none;border-radius:11px;background:var(--paper);padding:0;
-  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13.5px;
   font-weight:500;color:var(--ink-2);overflow:hidden;}
 .cal-cell.blank{background:none;}
 .cal-cell.future{opacity:.32;}
@@ -289,33 +298,33 @@ const CSS = `
 .cal-cell .care{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:14px;height:3px;
   border-radius:2px;background:var(--lime);}
 .cal-cell .blood{position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--alarm);}
-.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:10.5px;color:var(--faint);}
+.cal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12px;color:var(--faint);}
 .cal-legend b{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
-.pillbar{display:flex;-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);background:rgba(8,54,69,.22);border-radius:99px;padding:3px;margin:20px auto 0;
+.pillbar{display:flex;-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);background:rgba(8,54,69,.22);border-radius:99px;padding:3px;margin:14px auto 0;
   max-width:250px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);}
-.pillbar button{flex:1;border:none;background:none;border-radius:99px;padding:8px 6px;
-  color:rgba(255,255,255,.76);font-size:12.5px;font-weight:500;}
+.pillbar button{flex:1;border:none;background:none;border-radius:99px;padding:11px 6px;
+  color:rgba(255,255,255,.76);font-size:14px;font-weight:500;}
 .pillbar button.on{background:rgba(255,255,255,.94);color:var(--sky-1);font-weight:600;box-shadow:0 2px 10px -3px rgba(8,54,69,.4);}
 .pillbar button.on.ill{color:#94530A;}
 
 /* ---------- care ring hero ---------- */
-.ringwrap{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:14px;color:#fff;}
+.ringwrap{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:6px;color:#fff;}
 .ringwrap::before{content:"";position:absolute;top:-32px;left:50%;transform:translateX(-50%);
   width:290px;height:290px;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgba(200,242,255,.32) 0%,rgba(200,242,255,.11) 42%,rgba(200,242,255,0) 68%);}
 .ringsvg{display:block;}
 .ringsvg circle{transition:stroke-dashoffset .8s var(--ease),stroke .5s var(--ease),opacity .5s var(--ease);}
 .ring-n{font-size:44px;font-weight:400;letter-spacing:-0.01em;fill:#fff;}
-.ring-sub{font-size:8.5px;font-weight:600;letter-spacing:0.16em;fill:rgba(255,255,255,.66);text-transform:uppercase;font-family:'Figtree',sans-serif;}
-.ring-cap{font-size:12.5px;opacity:.86;margin-top:4px;text-align:center;text-shadow:0 1px 3px rgba(8,54,69,.3);}
+.ring-sub{font-size:11px;font-weight:600;letter-spacing:0.096em;fill:rgba(255,255,255,.66);text-transform:uppercase;font-family:'Figtree',sans-serif;}
+.ring-cap{font-size:14px;opacity:.86;margin-top:4px;text-align:center;text-shadow:0 1px 3px rgba(8,54,69,.3);}
 .run{width:min(300px,78%);margin:16px auto 0;}
 .run-bar{height:5px;border-radius:99px;background:rgba(8,54,69,.22);overflow:hidden;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
 .run-bar span{display:block;height:100%;border-radius:99px;background:#fff;
   transition:width 1.2s var(--ease),background .6s var(--ease);}
 .run-bar.best span{background:var(--lime);box-shadow:0 0 14px 1px rgba(214,242,75,.7);}
-.run-lab{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-weight:600;
-  letter-spacing:0.13em;text-transform:uppercase;color:rgba(255,255,255,.78);}
+.run-lab{display:flex;justify-content:space-between;margin-top:7px;font-size:11.5px;font-weight:600;
+  letter-spacing:0.078em;text-transform:uppercase;color:rgba(255,255,255,.78);}
 .run-lab b{font-family:var(--display);font-weight:600;letter-spacing:0.04em;color:#fff;}
 .run-lab .pb{color:var(--lime);}
 .milestone{background:#083645;color:#fff;border-radius:22px;padding:20px;margin-top:12px;
@@ -324,21 +333,21 @@ const CSS = `
   background:radial-gradient(circle,rgba(214,242,75,.24) 0%,rgba(214,242,75,0) 70%);}
 .milestone .n{font-family:var(--display);font-size:42px;font-weight:500;letter-spacing:-0.02em;
   line-height:1;color:var(--lime);}
-.milestone .t{font-size:15px;font-weight:600;margin-top:8px;letter-spacing:-0.01em;}
-.milestone .d{font-size:12.5px;opacity:.72;margin-top:5px;line-height:1.5;}
+.milestone .t{font-size:16px;font-weight:600;margin-top:8px;letter-spacing:-0.01em;}
+.milestone .d{font-size:14px;opacity:.72;margin-top:5px;line-height:1.5;}
 .milestone .btn{margin-top:14px;background:rgba(255,255,255,.12);color:#fff;position:relative;}
 .ring-cap b{font-weight:500;opacity:1;}
 
 /* ---------- glass ---------- */
-.glass{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:24px;
+.glass{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:16px;
   background:rgba(8,54,69,.30);border-radius:18px;overflow:hidden;
   box-shadow:0 1px 0 rgba(255,255,255,.24) inset, 0 12px 28px -16px rgba(8,54,69,.75);}
-.gcard{background:rgba(8,54,69,.22);padding:17px 10px;text-align:center;color:#fff;
+.gcard{background:rgba(8,54,69,.22);padding:13px 8px;text-align:center;color:#fff;
   -webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);}
-.gcard .k{font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;opacity:.82;}
+.gcard .k{font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;opacity:.82;}
 .gcard .v{font-size:16px;font-weight:500;letter-spacing:-0.005em;margin-top:8px;line-height:1.2;text-shadow:0 1px 3px rgba(8,54,69,.30);
   display:flex;align-items:center;justify-content:center;gap:6px;min-height:20px;}
-.gcard .v small{font-size:10.5px;font-weight:400;opacity:.72;letter-spacing:0;font-family:var(--body);}
+.gcard .v small{font-size:12px;font-weight:400;opacity:.72;letter-spacing:0;font-family:var(--body);}
 .gswatch{width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.6);flex:0 0 auto;}
 
 /* ---------- sheet ---------- */
@@ -375,7 +384,7 @@ details[open] .card-t.foldy{margin-bottom:14px;}
   border-right:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:1px;
   transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s var(--ease);opacity:.75;}
 details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px);}
-.sectionhead{font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:0.06em;
+.sectionhead{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:0.06em;
   text-transform:uppercase;color:var(--faint);margin:26px 4px 2px;}
 /* settings live inside the sheet, which is already white, so the cards drop the
    float and take a paper fill instead — otherwise they are white on white */
@@ -386,7 +395,7 @@ details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px);}
 /* plain buttons are paper-filled too, so on a paper card they vanish */
 .setgrp .btn:not(.pri){background:var(--paper-2);}
 .infob{width:19px;height:19px;flex:0 0 auto;border:none;border-radius:50%;padding:0;
-  background:var(--paper-2);color:var(--muted);font-family:var(--display);font-size:11px;
+  background:var(--paper-2);color:var(--muted);font-family:var(--display);font-size:12.5px;
   font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;
   vertical-align:middle;margin-left:7px;}
 .card-t .ttl{display:flex;align-items:center;min-width:0;}
@@ -394,7 +403,7 @@ details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px);}
    as one undifferentiated block. The display face does the separating instead. */
 .card-t>span:first-child,.card-t .ttl{font-family:var(--display);font-size:19px;font-weight:600;
   letter-spacing:-0.022em;color:var(--ink);line-height:1.15;}
-.card-t .hint{font-weight:400;font-size:11px;color:var(--faint);text-align:right;}
+.card-t .hint{font-weight:400;font-size:12.5px;color:var(--faint);text-align:right;}
 .card.flat{background:var(--paper);border-radius:14px;padding:15px;margin-top:14px;box-shadow:none;}
 
 /* ---------- ribbon ---------- */
@@ -402,22 +411,22 @@ details[open] .chev{transform:rotate(-135deg) translate(-2px,-2px);}
 .ribbon-flat{margin-top:18px;}
 .ribbon-inner{background:#fff;border-radius:22px;padding:18px 18px 14px;box-shadow:var(--float);}
 .ribbon-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;gap:10px;}
-.ribbon-title{font-size:12.5px;font-weight:500;color:var(--muted);}
-.ribbon-title.sm{font-size:10.5px;color:var(--faint);}
+.ribbon-title{font-size:14px;font-weight:500;color:var(--muted);}
+.ribbon-title.sm{font-size:12px;color:var(--faint);}
 .ribbon{display:flex;align-items:flex-end;gap:1px;height:44px;}
 .rib-col{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;position:relative;cursor:pointer;background:none;border:none;padding:0;}
 .rib-fill{width:100%;border-radius:1px 1px 0 0;}
 .rib-empty{width:100%;height:2px;background:#D2DCE6;border-radius:1px;}
 .rib-blood{position:absolute;bottom:-5px;left:0;right:0;height:2px;background:var(--alarm);border-radius:2px;}
 .rib-today{outline:1px solid var(--ink);outline-offset:1px;border-radius:2px;}
-.rib-axis{display:flex;justify-content:space-between;font-size:8.5px;font-weight:600;color:var(--faint);margin-top:10px;letter-spacing:0.12em;text-transform:uppercase;}
+.rib-axis{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--faint);margin-top:10px;letter-spacing:0.12em;text-transform:uppercase;}
 
 /* ---------- sliders ---------- */
 .spec-ctl{display:flex;flex-direction:column;gap:20px;}
 .sl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px;}
-.sl-head span{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);}
-.sl-head b{color:var(--ink);font-weight:500;font-size:15px;letter-spacing:-0.005em;line-height:1.3;text-align:right;}
-.sl-head b em{display:block;font-style:normal;font-size:10.5px;font-weight:400;color:var(--faint);margin-top:1px;}
+.sl-head span{font-size:11px;font-weight:600;letter-spacing:0.096em;text-transform:uppercase;color:var(--muted);}
+.sl-head b{color:var(--ink);font-weight:500;font-size:16px;letter-spacing:-0.005em;line-height:1.3;text-align:right;}
+.sl-head b em{display:block;font-style:normal;font-size:12px;font-weight:400;color:var(--faint);margin-top:1px;}
 input[type=range].sl{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:none;outline:none;padding:0;margin:0;display:block;}
 input[type=range].sl::-webkit-slider-runnable-track{height:7px;border-radius:99px;background:var(--track);box-shadow:inset 0 0 0 1px rgba(8,54,69,.08);}
 input[type=range].sl::-webkit-slider-thumb{-webkit-appearance:none;width:21px;height:21px;border-radius:50%;background:var(--thumb);border:3px solid #fff;box-shadow:0 0 0 1px rgba(8,54,69,.14),0 2px 6px rgba(8,54,69,.16);margin-top:-7px;}
@@ -429,26 +438,26 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .bloodrow{display:flex;align-items:center;text-align:left;border:none;padding:11px 14px;border-radius:13px;
   background:var(--paper);color:var(--ink);}
 .bloodrow.on{background:var(--alarm-soft);box-shadow:inset 0 0 0 1.5px var(--alarm);}
-.bl-tx b{display:block;font-size:13.5px;font-weight:500;letter-spacing:-0.005em;}
-.bl-tx small{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+.bl-tx b{display:block;font-size:15px;font-weight:500;letter-spacing:-0.005em;}
+.bl-tx small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;}
 .bloodrow.on .bl-tx small{color:var(--alarm);opacity:.85;}
 .seg.wrap{flex-wrap:wrap;}
 .seg.wrap button{flex:1 0 46%;}
-.delta{margin-top:18px;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.5;background:var(--paper);color:var(--ink-2);}
+.delta{margin-top:18px;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;background:var(--paper);color:var(--ink-2);}
 .delta.up{background:#FDF5E7;color:#77571A;}
 .delta.down{background:#ECF5F1;color:var(--ok);}
 
 /* ---------- controls ---------- */
 .tog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;}
 .tog{display:flex;align-items:center;gap:9px;padding:12px 13px;border-radius:13px;border:none;
-  background:var(--paper);box-shadow:none;text-align:left;font-size:13px;color:var(--ink-2);}
-.tog .box{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(8,54,69,.16);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;}
+  background:var(--paper);box-shadow:none;text-align:left;font-size:14.5px;color:var(--ink-2);}
+.tog .box{width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(8,54,69,.16);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
 .tog.on{background:var(--accent-soft);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px rgba(5,123,193,.18);}
 .tog.on .box{background:var(--accent);box-shadow:none;}
 .tog.part{background:#F2F7FA;color:var(--ink-2);box-shadow:inset 0 0 0 1px rgba(5,123,193,.11);}
 .tog.part .box{box-shadow:inset 0 0 0 1px rgba(5,123,193,.35);color:var(--accent);}
 .tog.part .count{background:rgba(5,123,193,.10);color:var(--accent);}
-.tog .count{margin-left:auto;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:0;
+.tog .count{margin-left:auto;font-family:var(--display);font-size:12.5px;font-weight:600;letter-spacing:0;
   min-width:19px;height:19px;border-radius:6px;display:flex;align-items:center;justify-content:center;
   background:rgba(8,54,69,.05);color:var(--faint);}
 .tog.on .count{background:rgba(255,255,255,.6);color:var(--accent);}
@@ -456,14 +465,14 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 
 .seg{display:flex;gap:6px;flex-wrap:wrap;}
 .seg button{flex:1 1 0;min-width:56px;padding:11px 5px;border-radius:12px;border:none;
-  background:var(--paper);box-shadow:none;font-size:12px;color:var(--ink-2);white-space:nowrap;}
+  background:var(--paper);box-shadow:none;font-size:13.5px;color:var(--ink-2);white-space:nowrap;}
 .seg button.on{background:var(--accent);color:#fff;font-weight:500;box-shadow:none;}
-.seg.sm button{font-size:11.5px;padding:9px 4px;min-width:0;}
+.seg.sm button{font-size:13px;padding:9px 4px;min-width:0;}
 .seg.alarm button.on{background:var(--alarm);}
-.rowlab{font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin:24px 0 11px;}
+.rowlab{font-size:11px;font-weight:600;letter-spacing:0.096em;text-transform:uppercase;color:var(--muted);margin:24px 0 11px;}
 
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
-.chip{padding:8px 14px;border-radius:99px;border:none;background:var(--paper);box-shadow:none;font-size:12px;color:var(--ink-2);}
+.chip{padding:8px 14px;border-radius:99px;border:none;background:var(--paper);box-shadow:none;font-size:13.5px;color:var(--ink-2);}
 .chip.on{background:var(--accent);color:#fff;font-weight:500;box-shadow:none;}
 .chip.add{background:none;box-shadow:inset 0 0 0 1px var(--hair);color:var(--muted);}
 .chipwrap{display:flex;gap:7px;margin-top:10px;}
@@ -475,25 +484,25 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .aq-dial svg circle{transition:stroke-dashoffset .9s var(--ease),stroke .5s var(--ease);}
 .aq-num{position:relative;text-align:center;line-height:1;}
 .aq-num b{display:block;font-family:var(--display);font-size:20px;font-weight:500;letter-spacing:-0.02em;color:var(--ink);}
-.aq-num span{display:block;font-size:7px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--faint);margin-top:3px;}
+.aq-num span{display:block;font-size:10px;font-weight:600;letter-spacing:0.096em;text-transform:uppercase;color:var(--faint);margin-top:3px;}
 .aq-body{flex:1;min-width:0;}
-.aq-body .lab{font-size:14px;font-weight:500;letter-spacing:-0.01em;}
-.aq-body .sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.aq-body .lab{font-size:15px;font-weight:500;letter-spacing:-0.01em;}
+.aq-body .sub{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.45;}
 .aq-empty{width:70px;height:70px;border-radius:50%;flex:0 0 auto;box-shadow:inset 0 0 0 5px var(--paper-2);}
 .locrow{display:flex;gap:7px;margin-top:12px;}
 .locrow .inp{flex:1;}
 .loclist{margin-top:8px;}
 .locopt{display:block;width:100%;text-align:left;padding:10px 13px;border:none;background:var(--paper);
-  border-radius:12px;margin-bottom:6px;font-size:12.5px;color:var(--ink-2);}
+  border-radius:12px;margin-bottom:6px;font-size:14px;color:var(--ink-2);}
 .care-row{display:flex;align-items:center;gap:12px;padding:13px 0;}
 .care-row+.care-row{box-shadow:inset 0 1px 0 var(--hair-2);}
-.care-row .nm{flex:1;font-size:14px;color:var(--ink);letter-spacing:-0.01em;}
-.care-row .nm small{display:block;font-size:11px;color:var(--faint);margin-top:1px;}
+.care-row .nm{flex:1;font-size:15px;color:var(--ink);letter-spacing:-0.01em;}
+.care-row .nm small{display:block;font-size:12.5px;color:var(--faint);margin-top:1px;}
 /* the delete sits under the row and is uncovered by dragging it aside; pan-y
    leaves the vertical axis to the scroller so the list still scrolls normally */
 .swipewrap{position:relative;overflow:hidden;border-radius:14px;margin-bottom:9px;}
 .swipedel{position:absolute;top:0;right:0;bottom:0;width:88px;border:none;padding:0;
-  background:var(--alarm);color:#fff;font-size:12.5px;font-weight:600;letter-spacing:0.01em;
+  background:var(--alarm);color:#fff;font-size:14px;font-weight:600;letter-spacing:0.01em;
   display:flex;align-items:center;justify-content:center;border-radius:0 14px 14px 0;}
 /* opaque on purpose: the delete sits behind this, and a row with no background
    of its own — a course row, say — let the red show straight through it */
@@ -508,9 +517,9 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .trackrow{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;
   padding:12px 2px;text-align:left;}
 .trackrow+.trackrow{box-shadow:inset 0 1px 0 var(--hair-2);}
-.trackrow .tr-tx{flex:1;font-size:14px;color:var(--ink-2);}
-.trackrow .tr-tx b{display:block;font-weight:600;color:var(--ink);font-size:14.5px;letter-spacing:-0.01em;}
-.trackrow .tr-tx small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;}
+.trackrow .tr-tx{flex:1;font-size:15px;color:var(--ink-2);}
+.trackrow .tr-tx b{display:block;font-weight:600;color:var(--ink);font-size:16px;letter-spacing:-0.01em;}
+.trackrow .tr-tx small{display:block;color:var(--muted);font-size:13px;margin-top:2px;}
 .trackrow .tr-sw{width:44px;height:26px;flex:0 0 auto;border-radius:99px;background:var(--paper-2);
   position:relative;transition:background .22s var(--ease);}
 .trackrow .tr-sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
@@ -529,12 +538,13 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .xbtn{width:40px;height:50px;flex:0 0 auto;border:none;border-radius:14px;background:var(--paper);
   color:var(--muted);font-family:var(--display);font-size:17px;font-weight:600;
   display:flex;align-items:center;justify-content:center;padding:0;}
+.xbtn:disabled{opacity:.38;cursor:default;}
 .dosefill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-soft);
   transition:width .5s var(--ease),background .4s var(--ease);}
 .dosepill.full .dosefill{background:var(--lime);}
-.dosepill .lbl{position:relative;font-size:14px;font-weight:500;letter-spacing:-0.005em;white-space:nowrap;
+.dosepill .lbl{position:relative;font-size:15px;font-weight:500;letter-spacing:-0.005em;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;}
-.dosepill .val{position:relative;font-family:var(--display);font-size:12px;font-weight:600;color:var(--muted);
+.dosepill .val{position:relative;font-family:var(--display);font-size:13.5px;font-weight:600;color:var(--muted);
   white-space:nowrap;letter-spacing:0.01em;}
 .dosepill.full .val{color:#083645;}
 /* a day with an extra session in it is still a finished day, so the bar stays
@@ -546,15 +556,19 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .cw.full{background:var(--accent);}
 .cw.today{outline:1px solid var(--ink);outline-offset:1.5px;}
 .done-flag{display:flex;align-items:center;gap:9px;margin-top:14px;padding:11px 14px;border-radius:14px;
-  background:var(--lime);color:#083645;font-size:12.5px;font-weight:600;}
+  background:var(--lime);color:#083645;font-size:14px;font-weight:600;}
 .done-flag .tick{width:18px;height:18px;border-radius:50%;background:#083645;color:var(--lime);
-  display:flex;align-items:center;justify-content:center;font-size:9px;flex:0 0 auto;}
+  display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto;}
 
-.sym{display:flex;align-items:center;gap:10px;padding:9px 0;}
+.sym{display:flex;align-items:center;gap:10px;padding:7px 0;}
+/* what the four buttons mean, over the buttons, instead of in a legend up by the title */
+.symhead{display:flex;justify-content:flex-end;gap:5px;padding:2px 0 4px;}
+@media (max-width:359px){.dot{width:34px!important;}.symhead span{width:34px!important;font-size:10.5px!important;}}
+.symhead span{width:40px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.01em;}
 .sym+.sym{box-shadow:inset 0 1px 0 var(--hair-2);}
-.sym .nm{flex:1;font-size:13px;color:var(--ink-2);}
+.sym .nm{flex:1;min-width:0;overflow-wrap:anywhere;hyphens:auto;line-height:1.3;font-size:14.5px;color:var(--ink-2);}
 .dots{display:flex;gap:5px;flex:0 0 auto;}
-.dot{width:27px;height:27px;border-radius:9px;border:none;background:var(--paper-2);box-shadow:none;font-family:var(--display);font-size:10.5px;font-weight:500;color:var(--faint);padding:0;display:flex;align-items:center;justify-content:center;}
+.dot{width:40px;height:38px;border-radius:11px;border:none;background:var(--paper-2);box-shadow:none;font-family:var(--display);font-size:14px;font-weight:500;color:var(--muted);padding:0;display:flex;align-items:center;justify-content:center;}
 .dot.on{color:#fff;font-weight:600;box-shadow:none;}
 .dot.on.lv0{background:var(--paper-2);color:var(--muted);}
 .dot.on.lv1{background:#8FD3F0;}
@@ -564,14 +578,14 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .resp{margin-top:10px;}
 .resp-row{display:flex;align-items:center;gap:10px;padding:7px 0;}
 .resp-row+.resp-row{box-shadow:inset 0 1px 0 var(--hair-2);}
-.resp-row .nm{flex:1;font-size:12.5px;color:var(--ink-2);}
-.resp-row .val{font-size:11.5px;font-weight:500;white-space:nowrap;}
+.resp-row .nm{flex:1;font-size:14px;color:var(--ink-2);}
+.resp-row .val{font-size:13px;font-weight:500;white-space:nowrap;}
 .resp-row .val.good{color:var(--ok);}
 .resp-row .val.none{color:var(--faint);font-weight:400;}
 
 .vitals{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;}
 .vit{border:none;border-radius:14px;padding:14px 15px;background:var(--paper);box-shadow:none;}
-.vit label{display:block;font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.vit label{display:block;font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .vit input{width:100%;border:none;outline:none;background:none;font-size:21px;font-weight:400;letter-spacing:-0.02em;line-height:1.25;color:var(--ink);padding:0;}
 .vit input::placeholder{color:#D3DCE4;}
 
@@ -579,22 +593,22 @@ input[type=range].sl::-moz-range-thumb{width:21px;height:21px;border-radius:50%;
 .inp:focus{box-shadow:inset 0 0 0 1.5px var(--accent);}
 textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 
-.btn{padding:10px 17px;border-radius:99px;border:none;background:var(--paper);box-shadow:none;color:var(--ink-2);font-size:12.5px;font-weight:500;}
+.btn{padding:10px 17px;border-radius:99px;border:none;background:var(--paper);box-shadow:none;color:var(--ink-2);font-size:14px;font-weight:500;}
 .btn.pri{background:var(--accent);color:#fff;box-shadow:none;}
 .btn.danger{color:var(--alarm);background:var(--alarm-soft);box-shadow:none;}
 .btn.wide{width:100%;border-radius:15px;background:#fff;box-shadow:var(--float);padding:14px;}
 /* .wide sets a white background after .pri sets a white foreground, so without this
    the label on a primary wide button is white on white and reads as an empty box */
 .btn.pri.wide{background:var(--accent);color:#fff;}
-.btn.sm{padding:7px 13px;font-size:11.5px;}
+.btn.sm{padding:7px 13px;font-size:13px;}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;}
 
 .course{display:flex;align-items:center;gap:11px;padding:12px 0;flex-wrap:wrap;}
 .course .rowacts{margin-left:auto;}
 .course+.course{box-shadow:inset 0 1px 0 var(--hair-2);}
-.course .nm{flex:1 1 auto;min-width:118px;font-size:13.5px;font-weight:500;letter-spacing:-0.01em;}
-.course .nm small{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:1px;}
-.pill{font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;padding:5px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;}
+.course .nm{flex:1 1 auto;min-width:118px;font-size:15px;font-weight:500;letter-spacing:-0.01em;}
+.course .nm small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:1px;}
+.pill{font-size:11px;font-weight:600;letter-spacing:0.078em;text-transform:uppercase;padding:5px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;}
 .pill.done{background:var(--paper);color:var(--muted);}
 /* a pill that is actually a button, so it reads as the thing to tap */
 .pill.act{border:none;background:var(--accent-soft);color:var(--accent);cursor:pointer;}
@@ -604,30 +618,30 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .stat{background:var(--paper);border-radius:14px;padding:15px 9px;text-align:center;}
 .stat .v{font-size:26px;font-weight:400;letter-spacing:-0.025em;line-height:1.05;}
-.stat .v small{font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;font-family:var(--body);}
-.stat .k{font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);margin-top:7px;line-height:1.35;}
+.stat .v small{font-size:12.5px;font-weight:400;color:var(--muted);letter-spacing:0;font-family:var(--body);}
+.stat .k{font-size:11px;font-weight:600;letter-spacing:0.078em;text-transform:uppercase;color:var(--muted);margin-top:7px;line-height:1.35;}
 
 .ep{border:none;background:none;padding:0;margin-top:14px;}
 .ep-in{background:#fff;border-radius:22px;padding:18px;box-shadow:var(--float);}
 .ep-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
-.ep-d{font-size:14.5px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;}
-.ep-d small{font-weight:400;color:var(--muted);font-size:11px;margin-top:2px;font-family:var(--body);}
+.ep-d{font-size:16px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;}
+.ep-d small{font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px;font-family:var(--body);}
 .ep-strip{display:flex;gap:2px;height:28px;align-items:flex-end;margin-top:13px;}
 .ep-strip .c{flex:1;border-radius:1px 1px 0 0;min-width:3px;}
 .ep-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px;}
-.tag{font-size:10.5px;padding:5px 10px;border-radius:99px;background:var(--paper);color:var(--ink-2);}
+.tag{font-size:12px;padding:5px 10px;border-radius:99px;background:var(--paper);color:var(--ink-2);}
 .tag.blood{background:var(--alarm-soft);color:var(--alarm);}
 
-.tbl{width:100%;border-collapse:collapse;font-size:11.5px;}
-.tbl th{text-align:left;font-size:8.5px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);padding:7px 6px;border-bottom:1px solid var(--hair);}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{text-align:left;font-size:11px;font-weight:600;letter-spacing:0.078em;text-transform:uppercase;color:var(--muted);padding:7px 6px;border-bottom:1px solid var(--hair);}
 .tbl td{padding:7px 6px;border-bottom:1px solid var(--hair-2);vertical-align:top;}
-.tbl td.m{font-size:11px;font-weight:500;white-space:nowrap;}
+.tbl td.m{font-size:12.5px;font-weight:500;white-space:nowrap;}
 .chart{display:block;overflow:visible;}
-.legend{display:flex;gap:15px;margin-top:11px;font-size:11px;color:var(--muted);}
+.legend{display:flex;gap:15px;margin-top:11px;font-size:12.5px;color:var(--muted);}
 /* the enlarge control, and the sheet it opens */
 .ttlacts{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
 .expandbtn{width:30px;height:30px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper-2);
-  color:var(--ink-2);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
+  color:var(--ink-2);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
 .zoom{position:fixed;inset:auto 0 0 0;z-index:82;max-width:720px;margin:0 auto;background:#fff;
   border-radius:26px 26px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom));
   box-shadow:0 -20px 50px -20px rgba(8,54,69,.5);animation:slideup .34s var(--ease) both;}
@@ -642,19 +656,19 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .mon{flex:1;min-width:0;text-align:center;}
 .montrack{height:64px;display:flex;align-items:flex-end;}
 .monbar{width:100%;min-height:3px;border-radius:3px 3px 0 0;background:var(--accent);}
-.monn{display:block;font-family:var(--display);font-size:12px;font-weight:600;color:var(--ink);
+.monn{display:block;font-family:var(--display);font-size:13.5px;font-weight:600;color:var(--ink);
   margin-top:5px;min-height:15px;}
-.monk{display:block;font-size:9.5px;font-weight:600;letter-spacing:0.06em;color:var(--faint);}
+.monk{display:block;font-size:11.5px;font-weight:600;letter-spacing:0.06em;color:var(--faint);}
 .legend span{display:flex;align-items:center;gap:5px;}
 .legend i{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
 /* drugs, pooled */
 .drugs{display:flex;flex-direction:column;gap:13px;}
 .drug{background:var(--paper);border-radius:14px;padding:13px 14px;}
 .dh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
-.dh b{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-0.015em;color:var(--ink);}
-.dh span{font-size:11px;color:var(--muted);white-space:nowrap;}
+.dh b{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-0.015em;color:var(--ink);}
+.dh span{font-size:12.5px;color:var(--muted);white-space:nowrap;}
 .dstats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:11px;}
-.dstats span{display:flex;flex-direction:column;gap:2px;font-size:9.5px;font-weight:600;letter-spacing:0.1em;
+.dstats span{display:flex;flex-direction:column;gap:2px;font-size:11.5px;font-weight:600;letter-spacing:0.1em;
   text-transform:uppercase;color:var(--faint);line-height:1.3;}
 .dstats em{font-family:var(--display);font-size:16px;font-weight:600;font-style:normal;letter-spacing:-0.02em;
   color:var(--ink);text-transform:none;}
@@ -664,24 +678,24 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .dbar i.resolved{background:#7FB800;}
 .dbar i.partial{background:#E3B341;}
 .dbar i.failed{background:#D98A80;}
-.dnote{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--muted);}
-.chart .ct{font-size:11px;font-weight:500;fill:var(--muted);font-family:var(--body);}
+.dnote{margin-top:9px;font-size:13px;line-height:1.5;color:var(--muted);}
+.chart .ct{font-size:12.5px;font-weight:500;fill:var(--muted);font-family:var(--body);}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
-.note{font-size:12px;color:var(--muted);line-height:1.65;}
-.empty{text-align:center;padding:52px 18px;color:var(--muted);font-size:13px;line-height:1.6;}
+.note{font-size:13.5px;color:var(--muted);line-height:1.65;}
+.empty{text-align:center;padding:52px 18px;color:var(--muted);font-size:14.5px;line-height:1.6;}
 .empty strong{display:block;font-family:var(--display);color:var(--ink);font-size:19px;font-weight:600;margin-bottom:9px;letter-spacing:-0.015em;line-height:1.25;}
 .divider{height:1px;background:var(--hair-2);margin:20px 0;}
-.banner{background:#FDF5E7;border-radius:14px;padding:13px 15px;font-size:12.5px;margin-top:14px;line-height:1.55;color:#77571A;}
+.banner{background:#FDF5E7;border-radius:14px;padding:13px 15px;font-size:14px;margin-top:14px;line-height:1.55;color:#77571A;}
 /* room for the close, so the last line of text does not run under it */
 .hasx{position:relative;padding-right:40px;}
 .calloutx{position:absolute;top:7px;right:7px;width:26px;height:26px;border:none;border-radius:50%;
-  background:rgba(8,54,69,.06);color:inherit;opacity:.6;font-size:14px;line-height:1;
+  background:rgba(8,54,69,.06);color:inherit;opacity:.6;font-size:15px;line-height:1;
   display:flex;align-items:center;justify-content:center;padding:0;}
 .banner.red{background:var(--alarm-soft);color:var(--alarm);}
-.handover{background:var(--paper);border-radius:14px;padding:15px 16px;font-size:13px;line-height:1.65;
+.handover{background:var(--paper);border-radius:14px;padding:15px 16px;font-size:14.5px;line-height:1.65;
   color:var(--ink-2);white-space:pre-wrap;user-select:text;-webkit-user-select:text;}
-.insight{margin-top:10px;font-size:12px;line-height:1.6;padding:12px 14px;border-radius:12px;
+.insight{margin-top:10px;font-size:13.5px;line-height:1.6;padding:12px 14px;border-radius:12px;
   background:var(--paper);color:var(--ink-2);}
 .insight+.insight{margin-top:7px;}
 .insight b{font-family:var(--display);font-weight:600;letter-spacing:-0.01em;}
@@ -698,18 +712,18 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
   background:var(--ink);border-radius:2px;}
 .remind{display:flex;align-items:center;gap:11px;background:#fff;border-radius:18px;
   padding:14px 14px 14px 19px;margin-top:14px;box-shadow:var(--float);}
-.remind .txt{flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--ink);letter-spacing:-0.005em;line-height:1.25;}
-.remind .txt small{display:block;font-weight:400;color:var(--faint);font-size:10.5px;margin-top:4px;}
+.remind .txt{flex:1;min-width:0;font-size:14.5px;font-weight:500;color:var(--ink);letter-spacing:-0.005em;line-height:1.25;}
+.remind .txt small{display:block;font-weight:400;color:var(--faint);font-size:12px;margin-top:4px;}
 .remind input{width:78px;flex:0 0 auto;border:none;background:var(--paper);border-radius:12px;padding:9px 6px;
   font-family:var(--display);font-size:17px;font-weight:500;text-align:center;color:var(--ink);outline:none;letter-spacing:-0.01em;}
-.remind input::placeholder{color:#BCC7D1;font-size:12.5px;font-family:var(--body);letter-spacing:0;}
+.remind input::placeholder{color:#BCC7D1;font-size:14px;font-family:var(--body);letter-spacing:0;}
 .remx{width:30px;height:30px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
-  color:var(--faint);font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
+  color:var(--faint);font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;}
 .remind .ok{width:38px;height:38px;flex:0 0 auto;border:none;border-radius:12px;background:var(--accent);color:#fff;
-  font-size:14px;display:flex;align-items:center;justify-content:center;padding:0;}
+  font-size:15px;display:flex;align-items:center;justify-content:center;padding:0;}
 .remind .ok:disabled{background:var(--paper-2);color:#B6C2CE;}
-.remind .x{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:var(--faint);font-size:15px;padding:0;}
-.nudge{background:#fff;border-radius:22px;padding:18px;margin-top:12px;font-size:13px;color:var(--ink-2);line-height:1.55;box-shadow:var(--float);}
+.remind .x{width:26px;height:38px;flex:0 0 auto;border:none;background:none;color:var(--faint);font-size:16px;padding:0;}
+.nudge{background:#fff;border-radius:22px;padding:18px;margin-top:12px;font-size:14.5px;color:var(--ink-2);line-height:1.55;box-shadow:var(--float);}
 /* the day, carried down the page once the week strip has scrolled away, so the
    sideways gesture still has something on screen that belongs to it */
 .daybar{position:fixed;top:0;left:0;right:0;z-index:44;display:flex;align-items:center;gap:8px;
@@ -721,11 +735,11 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .daybar .wnav{color:var(--ink-2);height:34px;}
 .daybar .wnav:disabled{opacity:.22;}
 .dayname{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;
-  background:none;padding:6px 4px;color:var(--ink);font-family:var(--display);font-size:14px;
+  background:none;padding:6px 4px;color:var(--ink);font-family:var(--display);font-size:15px;
   font-weight:600;letter-spacing:-0.01em;}
-.dayname .cv{font-size:8px;color:var(--muted);}
-.todaychip{border:none;background:var(--accent-soft);color:var(--accent);font-size:9px;font-weight:600;
-  letter-spacing:0.15em;text-transform:uppercase;padding:7px 11px;border-radius:99px;flex:0 0 auto;}
+.dayname .cv{font-size:10.5px;color:var(--muted);}
+.todaychip{border:none;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:600;
+  letter-spacing:0.09em;text-transform:uppercase;padding:7px 11px;border-radius:99px;flex:0 0 auto;}
 @media print{.daybar{display:none;}}
 
 .nudge.act{display:flex;align-items:center;justify-content:space-between;gap:13px;}
@@ -740,13 +754,13 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 @keyframes dropdown{from{transform:translate3d(0,-101%,0);}to{transform:none;}}
 .calgrab{width:40px;height:4px;border-radius:99px;background:var(--hair);margin:0 auto 14px;}
 .calwrap .card{margin-top:0;box-shadow:none;padding:0;}
-.monthbtn .cv{display:inline-block;margin-left:5px;font-size:8px;transition:transform .3s var(--ease);}
+.monthbtn .cv{display:inline-block;margin-left:5px;font-size:10.5px;transition:transform .3s var(--ease);}
 .monthbtn.open .cv{transform:rotate(180deg);}
 
 /* edit and remove controls on rows that were previously write-once */
 .rowacts{display:flex;gap:6px;flex:0 0 auto;}
 .iconsm{width:31px;height:31px;flex:0 0 auto;border:none;border-radius:50%;background:var(--paper);
-  color:var(--ink-2);font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;}
+  color:var(--ink-2);font-size:14.5px;display:flex;align-items:center;justify-content:center;padding:0;}
 .iconsm.del{background:var(--alarm-soft);color:var(--alarm);}
 
 /* auto-save is real, but without something confirming it the entry feels unsent */
@@ -757,16 +771,23 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.55;}
 .savednote.todo .tick{background:var(--accent-soft);color:var(--accent);}
 .savednote .btn{flex:0 0 auto;}
 .savednote .tick{width:31px;height:31px;flex:0 0 auto;border-radius:50%;background:var(--ok);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:15px;}
-.savednote .tx{flex:1;font-size:12.5px;color:var(--muted);line-height:1.5;}
-.savednote .tx b{display:block;color:var(--ink);font-weight:600;font-size:13.5px;margin-bottom:2px;}
-.saved{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#083645;color:#fff;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;padding:9px 17px;border-radius:99px;z-index:60;}
+  display:flex;align-items:center;justify-content:center;font-size:16px;}
+.savednote .tx{flex:1;font-size:14px;color:var(--muted);line-height:1.5;}
+.savednote .tx b{display:block;color:var(--ink);font-weight:600;font-size:15px;margin-bottom:2px;}
+.saved{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#083645;color:#fff;font-size:13px;font-weight:600;letter-spacing:0.01em;padding:10px 18px;border-radius:99px;z-index:60;max-width:calc(100vw - 32px);text-align:center;box-shadow:0 8px 22px -8px rgba(8,54,69,.5);}
+/* Every tap saves, and every save used to raise the banner above over the rows
+   being tapped. The routine one is now a tick in the corner that takes no touches;
+   the centred banner is kept for things that are actually news. */
+.saved.quiet{left:auto;right:14px;transform:none;padding:6px 11px 6px 9px;font-size:12px;font-weight:600;
+  background:rgba(8,54,69,.78);pointer-events:none;box-shadow:none;animation:fadein .25s var(--ease) both;}
 
 .nav{position:fixed;bottom:0;left:0;right:0;z-index:40;padding:0 0 env(safe-area-inset-bottom);
   background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);box-shadow:inset 0 1px 0 var(--hair);}
-.nav-in{max-width:720px;margin:0 auto;display:flex;padding:7px 10px 9px;}
-.nav button{flex:1;background:none;border:none;padding:9px 4px;color:var(--faint);font-size:8.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;border-radius:99px;}
-.nav button.on{color:var(--accent);background:var(--accent-soft);}
+.nav-in{max-width:720px;margin:0 auto;display:flex;gap:4px;padding:6px 10px 7px;}
+.nav button{flex:1;background:none;border:none;padding:7px 4px 6px;color:var(--muted);font-size:12px;font-weight:600;letter-spacing:0.01em;border-radius:16px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;min-height:50px;}
+.nav button svg{display:block;}
+.nav button.on{color:#0468A6;background:var(--accent-soft);}
 
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 @keyframes fadein{from{opacity:0;}to{opacity:1;}}
@@ -3298,14 +3319,22 @@ function About({
           </div>
         </div>
 
-        <div className="btnrow" style={{ marginTop: 18 }}>
-          <button className="btn pri" onClick={onShareBackup}>
-            Back up now
+        {/* On first open there is nothing to back up, and the highlighted button
+            was offering to back it up. The one thing to do here is begin. */}
+        {intro ? (
+          <button className="btn pri wide" style={{ marginTop: 20 }} onClick={close}>
+            Set up my log
           </button>
-          <button className="btn" onClick={close}>
-            {intro ? "Start logging" : "Close"}
-          </button>
-        </div>
+        ) : (
+          <div className="btnrow" style={{ marginTop: 18 }}>
+            <button className="btn pri" onClick={onShareBackup}>
+              Back up now
+            </button>
+            <button className="btn" onClick={close}>
+              Close
+            </button>
+          </div>
+        )}
 
         <details className="more">
           <summary>More about backups and losing data</summary>
@@ -3838,7 +3867,7 @@ function DosePill({ label, count, target, onSet, valueText, allowExtra = true })
       </button>
       <button
         className="xbtn"
-        style={count > 0 ? undefined : { visibility: "hidden" }}
+        disabled={count <= 0}
         onClick={() => count > 0 && onSet(count - 1)}
         aria-label={`${label}, one less`}
         title="One less"
@@ -4324,6 +4353,12 @@ function SymptomList({ day, custom, onSet, onAddCustom, onDeleteCustom }) {
 
   return (
     <>
+      <div className="symhead" aria-hidden="true">
+        <span>None</span>
+        <span>Mild</span>
+        <span>Mod.</span>
+        <span>Severe</span>
+      </div>
       {rows.map((k) => {
         const cur = day.symptoms[k] ?? 0;
         // only the ones you added yourself can go; the six standard features are what
@@ -4681,7 +4716,7 @@ function Hero({ episodes, days, date, run, care, regimen, compact }) {
   const pct = Math.min((run.current / run.target) * 100, 100);
   return (
     <div className="ringwrap">
-      <CareRing n={n} total={total} size={compact ? 156 : 196} />
+      <CareRing n={n} total={total} size={compact ? 140 : 196} />
       <div className="ring-cap">
         {st ? (
           <>
@@ -5193,7 +5228,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         open={foldOpen("symptoms", isUnwell || symptomsLogged > 0)}
         onToggle={setFold}
         title="Symptoms"
-        hint={symptomsLogged ? `${symptomsLogged} logged` : "none · mild · moderate · severe"}
+        hint={symptomsLogged ? `${symptomsLogged} logged` : ""}
         info={
           <Info title="Symptoms">
             <p>Set each one to none, mild, moderate or severe.</p>
@@ -7978,11 +8013,21 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
       <div className="card no-print">
         <div className="card-t" id="backup"><span>Backup</span></div>
         <StorageHealth days={Object.keys(state.days).length} />
+        {/* Six buttons sat in one row here: two that save a backup, two that read
+            one, and two exports that are not backups at all. Grouped by what they
+            are for, so the one that matters is not one of six. */}
+        <div className="rowlab">Save a copy</div>
         <div className="btnrow">
           <button className="btn pri" onClick={shareJson}>Back up now</button>
+          <button className="btn" onClick={exportJson}>Download instead</button>
+        </div>
+        <div className="rowlab" style={{ marginTop: 16 }}>Get one back</div>
+        <div className="btnrow">
           <button className="btn" onClick={() => fileRef.current && fileRef.current.click()}>Restore backup</button>
           <button className="btn" onClick={() => checkRef.current && checkRef.current.click()}>Check a backup file</button>
-          <button className="btn" onClick={exportJson}>Download instead</button>
+        </div>
+        <div className="rowlab" style={{ marginTop: 16 }}>Other formats · not backups</div>
+        <div className="btnrow">
           <button className="btn" onClick={onShareWeek}>Copy this week as text</button>
           <button className="btn" onClick={exportCsv}>Download CSV</button>
         </div>
@@ -8011,8 +8056,8 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
             <h4>Every time after that</h4>
             <p>Tap Back up now and your phone offers the same place again. Two taps, once a week is plenty.</p>
             <p>
-              The dot at the top of the screen turns amber after a few days and red after a week, so you do not have
-              to remember on your own.
+              The backup marker at the top of the screen turns amber after a few days and red after a week, so you
+              do not have to remember on your own.
             </p>
             <h4>Getting it back</h4>
             <p>
@@ -8645,7 +8690,11 @@ function App() {
 
   // read on every render rather than held in state: markBackedUp writes straight to
   // localStorage, and the render that follows it should already show the new colour
-  const backup = backupStatus();
+  // A red "never backed up" on a log with nothing in it is an alarm about nothing,
+  // and it is the first thing a new person sees. It starts counting with the first entry.
+  const backup = Object.keys(state.days || {}).length
+    ? backupStatus()
+    : { tone: "none", label: "Nothing to back up yet", short: "Backup" };
 
   const TITLES = {
     today: ["Clear", "bronchiectasis"],
@@ -8719,8 +8768,12 @@ function App() {
                   }, 80);
                 }}
               >
-                <span className="bd" />
-                <span className="bt">{backup.short}</span>
+                {/* a dot and the word "today" sat next to the Month button and read
+                    as a way to jump to today; the tray says what the age belongs to */}
+                <svg className="bi" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                  <path d="M8 2v7.2M5 6.6l3 3 3-3M2.8 10.6v2.2h10.4v-2.2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span className="bt">{backup.short === "never" ? "Back up" : backup.short}</span>
               </button>
               <button
                 className="iconbtn"
@@ -8976,16 +9029,28 @@ function App() {
         />
       )}
 
-      {(flash || saved) && <div className="saved no-print">{flash || "Saved"}</div>}
+      {flash ? (
+        <div className="saved no-print" role="status">{flash}</div>
+      ) : saved ? (
+        <div className="saved quiet no-print" role="status">{"\u2713 Saved"}</div>
+      ) : null}
 
       <nav className="nav no-print">
         <div className="nav-in">
           {[
-            ["today", "Log"],
-            ["history", "History"],
-            ["report", "Report"],
-          ].map(([k, l]) => (
-            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            ["today", "Log", "M4 6.5h12M4 11h12M4 15.5h7M17.5 14.2l-3.4 3.4-1.6-1.6"],
+            ["history", "History", "M3.5 16.5v-5M8 16.5v-9M12.5 16.5v-6.5M17 16.5V4.5"],
+            ["report", "Report", "M6 2.8h6l3.5 3.5V17a.7.7 0 0 1-.7.7H6a.7.7 0 0 1-.7-.7V3.5A.7.7 0 0 1 6 2.8zM12 2.8v3.5h3.5M8 10.5h5M8 13.8h5"],
+          ].map(([k, l, d]) => (
+            <button
+              key={k}
+              className={tab === k ? "on" : ""}
+              aria-current={tab === k ? "page" : undefined}
+              onClick={() => setTab(k)}
+            >
+              <svg viewBox="0 0 21 21" width="21" height="21" aria-hidden="true">
+                <path d={d} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               {l}
             </button>
           ))}

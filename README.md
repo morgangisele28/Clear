@@ -78,7 +78,7 @@ You can also set the times you mean to do your care and put them straight into y
 
 ![Only the things you actually measure](screenshots/clear-store-08b-yours.jpg)
 
-**And it stays yours.** Everything lives in your browser's storage on your device. A dot in the header shows how long it has been since your last backup, with the age next to it in words, and it goes amber and then red as that stretches out.
+**And it stays yours.** Everything lives in your browser's storage on your device. A backup marker in the header shows how long it has been since your last backup, with the age next to it in words, and it goes amber and then red as that stretches out.
 
 ![It never leaves your phone](screenshots/clear-store-09-private.jpg)
 
