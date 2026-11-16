@@ -116,6 +116,16 @@ Your data is tied to the exact web address you use it at. If you move to a diffe
 
 Download `index.html` and `sw.js`, put them on any static host, open the URL. `index.html` is entirely self-contained: the app, the fonts and the icon are all inside that one file. `sw.js` is optional and only adds offline support.
 
+## Working on it
+
+```
+npm install
+npm test         # the arithmetic: episodes, exacerbation rules, migrations, the write-up
+npm run build    # writes index.html
+```
+
+The app is `src/clear-app.jsx`. The tests import that same file and check the figures it derives from a log, because those are the parts that are wrong quietly: an episode a day too long, a migration that moves a reading, a sentence in the write-up that says less than was recorded.
+
 ## Not a medical device
 
 This is a diary that does arithmetic. It does not diagnose anything and it is no substitute for advice from your own team. Where it mentions common thresholds, such as peak flow zones or the standard exacerbation features, those are general reference points, not a plan written for you.

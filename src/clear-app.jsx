@@ -905,6 +905,24 @@ const bloodText = (day) => {
   if (age) bits.push(age.toLowerCase());
   return bits.join(", ");
 };
+// The most that came up on any one day, in the words of the scale. The write-up
+// used to test for a value the scale stopped using when it became a volume, so
+// every episode read "streaks only" however much blood had been logged — in the
+// one paragraph written to be handed to a prescriber.
+const worstBlood = (list) => {
+  let top = -1;
+  let frank = false;
+  let clots = false;
+  (list || []).forEach((day) => {
+    const i = BLOOD.findIndex((b) => b.v === day.blood);
+    if (i > top) top = i;
+    if (day.bloodLook === "frank") frank = true;
+    if (day.bloodLook === "clots") clots = true;
+  });
+  if (top < 1) return "amount not recorded";
+  const amount = top === 1 ? "specks or streaks only" : "at most " + BLOOD[top].label.toLowerCase() + " in a day";
+  return amount + (frank ? ", blood on its own at least once" : clots ? ", with clots at least once" : "");
+};
 const SEV = ["None", "Mild", "Moderate", "Severe"];
 const SEV_MARK = ["–", "1", "2", "3"];
 
@@ -1158,7 +1176,7 @@ const STORE_KEY = "bxlog-v1";
 // the header and the thing you tap to open it are recognisably the same object.
 const MARK = "data:image/png;base64,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";
 
-const BUILD = "3.15.2";
+const BUILD = "3.16.0";
 const BACKUP_KEY = "clear-last-backup";
 const SNAP_PREFIX = "clear-snap-";
 const SNAP_KEEP = 3;
@@ -1701,16 +1719,22 @@ function peakFlowContext(days, value, exclude) {
 
 // Rolling comparisons. Everything here is measured against the person's own history,
 // never against a population, and anything without enough data stays silent.
+const RECENT_DAYS = 10; // the newest reading has to be at least this fresh to warn on
 function earlyWarning(days, regimen) {
   const today = todayISO();
   const keys = Object.keys(days).filter((k) => k <= today).sort().reverse();
   const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
 
+  // "Your last three entries" has to mean lately. Without a horizon, someone back
+  // from a month of not logging was warned about a shift between readings taken
+  // weeks apart, as if it were happening now.
+  const horizon = addDays(today, -RECENT_DAYS);
   const series = (pick, n, skip = 0) => {
     const vals = [];
     for (const k of keys) {
       const v = pick(days[k]);
       if (v == null || v === "" || isNaN(Number(v))) continue;
+      if (!skip && !vals.length && k < horizon) return [];
       vals.push(Number(v));
       if (vals.length >= n + skip) break;
     }
@@ -1907,10 +1931,8 @@ function gapsBetween(eps) {
   return g;
 }
 
-// Three ways in, because the artifact sandbox may block direct network calls.
-// 1) Open-Meteo air quality: free, no key, handles past dates.
-// 2) A search-backed lookup through the Anthropic endpoint the sandbox does allow.
-// 3) Whatever you type in yourself.
+// Two ways in: Open-Meteo's air quality API (free, no key, handles past dates), or
+// whatever you type in yourself. This is the only network request the app makes.
 function timedFetch(url, opts, ms) {
   const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
   const t = setTimeout(() => ctl && ctl.abort(), ms);
@@ -2076,7 +2098,11 @@ function sampleYear() {
         volume: Math.max(2, Math.min(6, Math.round(2 + peak * 4))),
         texture: Math.max(3, Math.min(6, Math.round(3 + peak * 3))),
       };
-      day.blood = ep.blood && t > 0.2 && t < 0.5 ? "streaks" : "none";
+      // the scale these values come from was replaced in v7; the sample was still
+      // writing the retired one, which no reader of the new scale could look up
+      const bleeding = ep.blood && t > 0.2 && t < 0.5;
+      day.blood = bleeding ? "specks" : "none";
+      day.bloodLook = bleeding ? "streaks" : null;
       if (t < 0.5) day.temp = (37.2 + rnd() * 1.4).toFixed(1);
       day.spo2 = String(94 + Math.round(rnd() * 3));
       if (i % 3 === 0) day.peakFlow = String(330 + Math.round(rnd() * 60));
@@ -2221,9 +2247,9 @@ function episodeSummary(ep, days, regimen) {
   const bloodDays = logged.filter((d) => days[d].blood && days[d].blood !== "none");
   if (bloodDays.length)
     S.push(
-      `There was blood in it on ${bloodDays.length} day${bloodDays.length === 1 ? "" : "s"}${
-        bloodDays.some((d) => days[d].blood === "frank") ? ", frank on at least one" : ", streaks only"
-      }.`
+      `There was blood in it on ${bloodDays.length} day${bloodDays.length === 1 ? "" : "s"}, ${worstBlood(
+        bloodDays.map((d) => days[d])
+      )}.`
     );
 
   const temps = logged.map((d) => parseFloat(days[d].temp)).filter((t) => !isNaN(t));
@@ -2304,7 +2330,7 @@ function episodeSummary(ep, days, regimen) {
 
 function episodeText(ep, days) {
   const L = [];
-  L.push(`Bronchiectasis episode: ${fmtShortYr(ep.start)} to ${fmtShortYr(ep.end)} (${ep.span} days)`);
+  L.push(`Episode: ${fmtShortYr(ep.start)} to ${fmtShortYr(ep.end)} (${ep.span} days)`);
   if (ep.peakColor != null) L.push(`Peak sputum colour: ${SPUTUM[ep.peakColor].label.replace("\n", " ")}`);
   if (ep.blood) L.push("Haemoptysis present during this episode.");
   if (ep.maxTemp != null) L.push(`Highest temperature: ${ep.maxTemp} C`);
@@ -2431,11 +2457,23 @@ function storageWorks() {
 
 async function loadState() {
   if (!storageWorks()) return { state: emptyState(), ok: false };
+  // A stored log that fails to parse or migrate used to fall through to an empty
+  // state reported as healthy. The app then opened looking brand new, and the
+  // first tap saved that emptiness over the top of the real entries. It is now
+  // reported as broken, and the caller hands over to the rescue screen, which
+  // reads storage directly and writes nothing.
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return { state: migrate(JSON.parse(raw)), ok: true };
-  } catch (e) {}
-  return { state: emptyState(), ok: true };
+    raw = localStorage.getItem(STORE_KEY);
+  } catch (e) {
+    return { state: emptyState(), ok: false };
+  }
+  if (!raw) return { state: emptyState(), ok: true };
+  try {
+    return { state: migrate(JSON.parse(raw)), ok: true };
+  } catch (e) {
+    return { state: null, ok: false, broken: e || new Error("stored log could not be read") };
+  }
 }
 
 function snapKeys() {
@@ -3080,6 +3118,15 @@ function PeakFlowInsight({ days, date, value }) {
   );
 }
 
+// Median saturation across well days, once there are enough of them to call it usual.
+function spo2Usual(days, exclude) {
+  const vals = Object.keys(days)
+    .filter((k) => k !== exclude && days[k].status === "well" && days[k].spo2 !== "" && days[k].spo2 != null)
+    .map((k) => parseFloat(days[k].spo2))
+    .filter((x) => !isNaN(x));
+  return vals.length >= 5 ? median(vals) : null;
+}
+
 function OtherInsights({ day, days, date }) {
   const out = [];
   const t = parseFloat(day.temp);
@@ -3090,7 +3137,16 @@ function OtherInsights({ day, days, date }) {
       out.push(["", `${t}°C is slightly raised rather than a fever, which is usually taken as 38 and above.`]);
   }
   const o = parseFloat(day.spo2);
-  if (!isNaN(o)) {
+  // The bands below are the general ones, and they are wrong for anyone whose
+  // settled saturation sits under 95 — common in COPD, where a well-day reading
+  // in the low nineties is ordinary. Told every morning that their usual number
+  // is worth a call, people learn to ignore the line, including on the day it is
+  // true. So a reading within two points of your own well-day median is read
+  // against that instead. Anything further below it falls through to the bands.
+  const usualO = spo2Usual(days, date);
+  if (!isNaN(o) && usualO != null && usualO < 95 && o < 95 && o >= usualO - 2) {
+    out.push(["", `${o}% is in line with your own usual of ${usualO}% on well days. If your team has given you a target range, that is the one to go by.`]);
+  } else if (!isNaN(o)) {
     if (o >= 95) out.push(["good", `${o}% is a normal home reading.`]);
     else if (o >= 93)
       out.push(["", `${o}% is a little below the usual 95 to 100. Home meters are easily thrown off by cold hands, nail polish or movement, so take it again before reading anything into it.`]);
@@ -3998,7 +4054,7 @@ function Slider({ label, value, max, valueLabel, hint, track, thumb, onChange })
   );
 }
 
-function SputumPanel({ day, onChange, history, date, noted, onNote }) {
+function SputumPanel({ day, onChange, history, last, date, noted, onNote }) {
   const { color, volume, texture } = day.sputum;
   const recorded = color != null;
   const c = color ?? 0;
@@ -4051,9 +4107,18 @@ function SputumPanel({ day, onChange, history, date, noted, onNote }) {
           ) : (
             <button
               className="btn pri wide"
-              onClick={() => set({ color: 0, volume: 2, texture: 3 })}
+              onClick={() =>
+                // opens on the last reading rather than on "clear": most days it is
+                // the same as last time, and a slider that starts at clear records
+                // clear for anyone who taps and moves on
+                set(
+                  last && last.color != null
+                    ? { color: last.color, volume: last.volume ?? 2, texture: last.texture ?? 3 }
+                    : { color: 0, volume: 2, texture: 3 }
+                )
+              }
             >
-              Record sputum
+              {last && last.color != null ? "Record sputum · starts at last reading" : "Record sputum"}
             </button>
           )}
       </div>
@@ -4550,7 +4615,7 @@ function MonthPanel({ days, date, setDate, onClose, regimen }) {
         <span><b style={{ background: "var(--alarm)", borderRadius: "50%" }} />blood</span>
       </div>
       <div className="note" style={{ marginTop: 10 }}>
-        {logged} days logged this month, {cared} with all four doses in.
+        {logged} day{logged === 1 ? "" : "s"} logged this month, {cared} with the full plan done.
       </div>
     </div>
   );
@@ -4778,6 +4843,14 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
     [state.days, date]
   );
 
+  const lastSputum = useMemo(() => {
+    const k = Object.keys(state.days)
+      .filter((x) => x < date && state.days[x].sputum && state.days[x].sputum.color != null)
+      .sort()
+      .pop();
+    return k ? state.days[k].sputum : null;
+  }, [state.days, date]);
+
   const careDone = doseCount(day, state.regimen);
   const tracks = (k) => (state.track || {})[k] !== false;
   const anyVital = ["peakFlow", "fev1", "spo2", "temp", "restHr", "weight", "mmrc"].some(tracks);
@@ -4788,6 +4861,13 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
 
   const rules = useMemo(() => exacerbationRules(day, state.conditions), [day, state.conditions]);
   const exac = rules[0] || { n: 0, met: false, list: [] };
+  // The banner has always quoted the 48-hour threshold and left the counting of
+  // days to the reader. Yesterday's entry is right there, so it does that part too.
+  const sustained = (key) => {
+    const y = state.days[addDays(date, -1)];
+    if (!y || !y.status) return false;
+    return exacerbationRules(y, state.conditions).some((r) => r.key === key && r.met);
+  };
 
   // keep the picker sane if the selected day changes underneath it
   const onsetPick =
@@ -5016,6 +5096,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
       <SputumPanel
         day={day}
         history={sputumHistory}
+        last={lastSputum}
         date={date}
         noted={state.noted}
         onNote={onNote}
@@ -5141,7 +5222,7 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
         <Callout
           key={r.key}
           id={"exac-" + r.key}
-          sig={date + ":" + r.n}
+          sig={date + ":" + r.n + (sustained(r.key) ? ":48h" : "")}
           noted={state.noted}
           onNote={onNote}
           cls="banner"
@@ -5153,9 +5234,19 @@ function TodayView({ state, episodes, setDay, date, setDate, addCourse, endCours
             </>
           ) : (
             <>
-              {r.n} of the 6 standard exacerbation features are present today ({r.list.join(", ")}). Three or more
-              sustained over 48 hours is the usual threshold for ringing your team rather than waiting it out. This
-              counts what you logged. It is not a diagnosis.
+              {r.n} of the 6 standard exacerbation features are present today ({r.list.join(", ")}).{" "}
+              {sustained(r.key) ? (
+                <strong>
+                  Yesterday met it too, so that is the 48 hours: three or more sustained that long is the usual
+                  threshold for ringing your team rather than waiting it out.
+                </strong>
+              ) : (
+                <>
+                  Three or more sustained over 48 hours is the usual threshold for ringing your team rather than
+                  waiting it out.
+                </>
+              )}{" "}
+              This counts what you logged. It is not a diagnosis.
             </>
           )}
         </Callout>
@@ -7144,7 +7235,7 @@ function DayTable({ dates, days }) {
               </td>
               <td className="m">{day.sputum.volume != null ? VOLUME[day.sputum.volume] : "—"}</td>
               <td className="m" style={{ color: day.blood && day.blood !== "none" ? "var(--alarm)" : undefined }}>
-                {day.blood ? BLOOD.find((b) => b.v === day.blood).label : "—"}
+                {day.blood ? bloodLabel(day.blood) : "—"}
               </td>
               <td>{top || "—"}</td>
               <td className="m">{day.temp || "—"}</td>
@@ -7696,7 +7787,24 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
       try {
         const parsed = JSON.parse(r.result);
         if (!parsed || typeof parsed !== "object" || !parsed.days) throw new Error("bad");
-        onImport(migrate(parsed));
+        const next = migrate(parsed);
+        // The file picker was the only step between a mis-tap and a year of entries
+        // replaced. Say what is coming in and what it replaces, then ask.
+        const inN = Object.keys(next.days).length;
+        const haveN = Object.keys(state.days || {}).length;
+        if (
+          haveN &&
+          !window.confirm(
+            `Replace the ${haveN} day${haveN === 1 ? "" : "s"} on this device with the ${inN} day${
+              inN === 1 ? "" : "s"
+            } in that file? This cannot be undone from here.`
+          )
+        ) {
+          setToast("Nothing changed");
+          setTimeout(() => setToast(""), 2200);
+          return;
+        }
+        onImport(next);
         setToast("Restored");
       } catch (err) {
         setToast("That file isn't a log backup");
@@ -7849,7 +7957,7 @@ function ReportView({ state, episodes, onImport, onWipe, onAppt, onQuestions, on
           <details>
             <summary className="card-t foldy">
               <span>Day by day · {fmtShortYr(e.start)}</span>
-              <span className="hint">{spanDates(e).length} days</span>
+              <span className="hint">{spanDates(e).length} day{spanDates(e).length === 1 ? "" : "s"}</span>
             </summary>
             <div className="scrollx">
               <DayTable dates={spanDates(e)} days={state.days} />
@@ -7953,11 +8061,19 @@ function App() {
   const [flash, setFlash] = useState("");
   const timer = useRef(null);
   const first = useRef(true);
+  const [fatal, setFatal] = useState(null);
+  const [saveFailed, setSaveFailed] = useState(false);
+  // what is on screen but not yet on disk, for the flush below
+  const pending = useRef(null);
 
   useEffect(() => {
     let live = true;
-    loadState().then(({ state: s, ok }) => {
+    loadState().then(({ state: s, ok, broken }) => {
       if (!live) return;
+      if (broken) {
+        setFatal(broken);
+        return;
+      }
       if (s) setState(s);
       setPersist(ok);
       // ?sample=1 fills an empty log with a made-up year, for screenshots and for
@@ -7984,8 +8100,11 @@ function App() {
     if (!ready) return;
     if (first.current) { first.current = false; return; }
     if (timer.current) clearTimeout(timer.current);
+    pending.current = state;
     timer.current = setTimeout(async () => {
+      pending.current = null;
       const ok = await saveState(state);
+      setSaveFailed(!ok);
       if (ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 1100);
@@ -7993,6 +8112,34 @@ function App() {
     }, 700);
     return () => timer.current && clearTimeout(timer.current);
   }, [state, ready]);
+
+  // The save waits 700ms so a run of taps is one write. A phone that is locked or
+  // switched to another app inside that window suspends the page before the timer
+  // fires, and the last thing ticked — which is exactly how this gets used: tick a
+  // dose, pocket the phone — was never written. So write at once when the page is
+  // hidden or unloaded. localStorage is synchronous, which is what makes this safe
+  // to do on the way out.
+  useEffect(() => {
+    const flush = () => {
+      if (!pending.current) return;
+      const s = pending.current;
+      pending.current = null;
+      if (timer.current) clearTimeout(timer.current);
+      try {
+        takeSnapshot();
+        localStorage.setItem(STORE_KEY, JSON.stringify(s));
+      } catch (e) {
+        setSaveFailed(true);
+      }
+    };
+    const onHide = () => document.visibilityState === "hidden" && flush();
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, []);
 
   const setDay = useCallback((d, entry) => {
     setState((s) => ({ ...s, days: { ...s.days, [d]: entry } }));
@@ -8222,6 +8369,9 @@ function App() {
     }, SWIPE_OUT_MS);
   };
 
+  // handed to the boundary, whose rescue screen offers the stored data as a file
+  if (fatal) throw fatal;
+
   const wipe = () => {
     if (window.confirm("Erase every entry permanently? Download a backup first if you're not sure.")) {
       setState(emptyState());
@@ -8233,12 +8383,12 @@ function App() {
       const prev = { ...emptyDay(), ...(s.days[d] || {}) };
       const next = { ...prev, status };
 
-      // carry the maintenance dose and a sputum starting point forward, so the
-      // day opens with sensible values instead of blanks
-      const before = Object.keys(s.days).filter((k) => k < d).sort();
-      const lastLogged = before.length ? s.days[before[before.length - 1]] : null;
-      if (status && next.sputum.color == null && lastLogged && lastLogged.sputum.color != null)
-        next.sputum = { ...lastLogged.sputum };
+      // Sputum used to be copied forward from the last logged day here, so that
+      // tapping Well wrote yesterday's colour into today as though it had been
+      // looked at. Every figure that reads the sputum series — the baseline shift,
+      // the run-up before an episode, the write-up — then counted a reading nobody
+      // took. The starting point now arrives when Record sputum is tapped instead:
+      // one tap for "same as last time", and nothing recorded without one.
       if (status && !next.blood) next.blood = "none";
 
       // marking a day unwell sets every symptom to an explicit none, so that
@@ -8462,30 +8612,18 @@ function App() {
     setState((s) => ({ ...s, customSymptoms: (s.customSymptoms || []).filter((x) => x !== n) }));
   }, []);
 
+  // One tap for an ordinary day. It used to do two more things. It wrote the last
+  // well day's sputum into today — or "clear, scant, medium" on a first day with
+  // no history at all — so a single darker reading was then copied forward day
+  // after day and read back by the early warning as a sustained shift. And it
+  // emptied the day's symptoms, so tapping Well after logging a cough erased the
+  // cough. It now marks the day well and leaves everything else as it was found.
   const quickWell = useCallback((d) => {
     setState((s) => {
       const prev = { ...emptyDay(), ...(s.days[d] || {}) };
-      const wellKeys = Object.keys(s.days)
-        .filter((k) => k < d && s.days[k].status === "well")
-        .sort();
-      const lw = wellKeys.length ? s.days[wellKeys[wellKeys.length - 1]] : null;
       return {
         ...s,
-        days: {
-          ...s.days,
-          [d]: {
-            ...prev,
-            status: "well",
-            sputum:
-              prev.sputum.color != null
-                ? prev.sputum
-                : lw
-                ? { ...lw.sputum }
-                : { color: 0, volume: 2, texture: 3 },
-            blood: prev.blood || "none",
-            symptoms: {},
-          },
-        },
+        days: { ...s.days, [d]: { ...prev, status: "well", blood: prev.blood || "none" } },
       };
     });
   }, []);
@@ -8696,9 +8834,16 @@ function App() {
 
         {!persist && (
           <div className="banner red">
-            <strong>Nothing you enter is being saved.</strong> Artifact storage only works once an artifact has been
-            published, and it fails silently until then. Publish this artifact from the panel menu, or wait for the
-            standalone build. Until one of those, treat this as a preview and export a backup before you close it.
+            <strong>Nothing you enter is being saved.</strong> This browser is not letting the app store anything,
+            which usually means a private or incognito window, or storage switched off for this site. Open Clear in
+            a normal window, or from its home screen icon, before you log anything you want to keep.
+          </div>
+        )}
+        {persist && saveFailed && (
+          <div className="banner red">
+            <strong>Your last change was not saved.</strong> The browser refused the write, most often because the
+            device is out of storage. What you see is still here for now: go to Report and back it up to a file
+            before closing the app.
           </div>
         )}
 
@@ -8974,5 +9119,43 @@ class Boundary extends React.Component {
   }
 }
 
-const el = document.getElementById("root");
+// Mount only where there is a page. The test suite imports this same file under
+// Node to exercise the arithmetic, and there is no document there.
+const el = typeof document !== "undefined" ? document.getElementById("root") : null;
 if (el) createRoot(el).render(React.createElement(Boundary, null, React.createElement(App)));
+
+// Everything a figure on screen or a sentence in the write-up is derived from.
+// Exported for test/logic.test.mjs; the browser bundle is an IIFE and ignores it.
+export {
+  BLOOD,
+  SYMPTOMS,
+  addDays,
+  diffDays,
+  todayISO,
+  emptyDay,
+  emptyState,
+  migrate,
+  exacerbationRules,
+  parseDose,
+  doseText,
+  courseAdherence,
+  planOf,
+  doseCount,
+  careComplete,
+  buildEpisodes,
+  courseResponse,
+  leadTimes,
+  drugHistory,
+  peakFlowContext,
+  earlyWarning,
+  median,
+  wellRun,
+  careRun,
+  reminderIcs,
+  sampleYear,
+  episodeSummary,
+  episodeText,
+  weekDigest,
+  worstBlood,
+  spo2Usual,
+};
